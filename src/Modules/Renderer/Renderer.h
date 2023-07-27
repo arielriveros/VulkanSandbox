@@ -1,3 +1,5 @@
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <optional>
@@ -5,6 +7,10 @@
 
 const std::vector<const char*> validationLayers = {
 	"VK_LAYER_KHRONOS_validation"
+};
+
+const std::vector<const char*> deviceExtensions = {
+	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
 #ifdef NDEBUG
@@ -16,17 +22,25 @@ const bool ENABLE_VALIDATION_LAYERS = true;
 struct QueueFamilyIndices
 {
 	std::optional<uint32_t> GraphicsFamily;
+	std::optional<uint32_t> PresentFamily;
 
 	bool IsComplete()
 	{
-		return GraphicsFamily.has_value();
+		return GraphicsFamily.has_value() && PresentFamily.has_value();
 	}
+};
+
+struct SwapChainSupportDetails
+{
+	VkSurfaceCapabilitiesKHR Capabilities;
+	std::vector<VkSurfaceFormatKHR> Formats;
+	std::vector<VkPresentModeKHR> PresentModes;
 };
 
 class Renderer: public IModule
 {
 public:
-	Renderer();
+	Renderer(GLFWwindow* window);
 	~Renderer();
 
 	void Initialize();
@@ -41,9 +55,14 @@ private:
 	bool IsDeviceSuitable(VkPhysicalDevice device);
 	void CreateDevice();
 	void DestroyDevice();
+	void CreateSurface();
+	void DestroySurface();
+	
+	bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
+	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
 	bool CheckValidationLayerSupport();
-	std::vector<const char*> Renderer::GetRequiredExtensions();
+	std::vector<const char*> GetRequiredExtensions();
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
 		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -62,9 +81,14 @@ private:
 		const VkAllocationCallbacks* pAllocator);
 
 private:
+	GLFWwindow* m_WindowRef;
+
 	VkInstance m_Instance = VK_NULL_HANDLE;
 	VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
 	VkDevice m_Device = VK_NULL_HANDLE;
-	VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
 	VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
+	VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
+	VkQueue m_PresentQueue = VK_NULL_HANDLE;
+
+	VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
 };
