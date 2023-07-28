@@ -65,6 +65,11 @@ private:
 	VkExtent2D SelectSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 	void CreateSwapChain();
 	void DestroySwapChain();
+	void CreateImageViews();
+	void DestroyImageViews();
+
+	void CreateGraphicsPipeline();
+	std::vector<char> ReadFile(const std::string& filename); // Move to specialized class later
 
 	bool CheckValidationLayerSupport();
 	std::vector<const char*> GetRequiredExtensions();
@@ -96,8 +101,9 @@ private:
 	VkQueue m_PresentQueue = VK_NULL_HANDLE;
 	VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;
 	std::vector<VkImage> m_SwapChainImages;
-	VkFormat m_SwapChainImageFormat;
-	VkExtent2D m_SwapChainExtent;
+	VkFormat m_SwapChainImageFormat = VK_FORMAT_UNDEFINED;
+	VkExtent2D m_SwapChainExtent = {0, 0};
+	std::vector<VkImageView> m_SwapChainImageViews;
 
 	VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
 };

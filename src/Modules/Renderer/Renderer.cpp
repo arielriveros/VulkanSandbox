@@ -1,5 +1,6 @@
 #include <iostream>
 #include <set>
+#include <fstream>
 #include "Renderer.h"
 
 
@@ -22,6 +23,8 @@ void Renderer::Initialize()
 	SelectPhysicalDevice();
 	CreateDevice();
 	CreateSwapChain();
+	CreateImageViews();
+	CreateGraphicsPipeline();
 }
 
 void Renderer::Update()
@@ -31,6 +34,7 @@ void Renderer::Update()
 
 void Renderer::Terminate()
 {
+	DestroyImageViews();
 	DestroySwapChain();
 	DestroyDevice();
 	if (ENABLE_VALIDATION_LAYERS)
@@ -368,6 +372,65 @@ void Renderer::CreateSwapChain()
 void Renderer::DestroySwapChain()
 {
 	vkDestroySwapchainKHR(m_Device, m_SwapChain, nullptr);
+}
+
+void Renderer::CreateImageViews()
+{
+	m_SwapChainImageViews.resize(m_SwapChainImages.size());
+
+	for (size_t i = 0; i < m_SwapChainImages.size(); i++)
+	{
+		VkImageViewCreateInfo createInfo{};
+			createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+			createInfo.image = m_SwapChainImages[i];
+			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+			createInfo.format = m_SwapChainImageFormat;
+			createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+			createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+			createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+			createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+			createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			createInfo.subresourceRange.baseMipLevel = 0;
+			createInfo.subresourceRange.levelCount = 1;
+			createInfo.subresourceRange.baseArrayLayer = 0;
+			createInfo.subresourceRange.layerCount = 1;
+
+			VkResult result = vkCreateImageView(m_Device, &createInfo, nullptr, &m_SwapChainImageViews[i]);
+			if (result != VK_SUCCESS)
+				throw std::runtime_error("Failed to create image views");
+	}
+}
+
+void Renderer::DestroyImageViews()
+{
+	for (auto imageView : m_SwapChainImageViews)
+		vkDestroyImageView(m_Device, imageView, nullptr);
+}
+
+void Renderer::CreateGraphicsPipeline()
+{
+	auto vertShaderCode = ReadFile("../default.frag.spv");
+	auto fragShaderCode = ReadFile("../default.frag.spv");
+}
+
+std::vector<char> Renderer::ReadFile(const std::string& filename)
+{
+	std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+	if (!file.is_open())
+		throw std::runtime_error("Failed to open file");
+
+	size_t fileSize = (size_t)file.tellg();
+	std::vector<char> buffer(fileSize);
+
+	file.seekg(0);
+	file.read(buffer.data(), fileSize);
+
+	file.close();
+
+	std::cout << fileSize << std::endl;
+
+	return {};
 }
 
 bool Renderer::CheckValidationLayerSupport()
