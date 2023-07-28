@@ -3,14 +3,17 @@ project(VulkanSandbox CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# Vulkan SDK required
 find_package(Vulkan REQUIRED)
 
+# Third party includes
 set(EXTERNAL_LIBS_INCLUDES
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/glfw/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/glm"
     "${Vulkan_INCLUDE_DIRS}"
 )
 
+# Third party libraries
 set(EXTERNAL_LIBS
     glfw
     Vulkan::Vulkan
@@ -18,6 +21,15 @@ set(EXTERNAL_LIBS
 
 add_subdirectory(lib)
 add_subdirectory(src)
+
+# Resources
+add_custom_target(CopyResources ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${PROJECT_SOURCE_DIR}/resources
+    ${PROJECT_BINARY_DIR}/resources
+)
+
+add_dependencies(VulkanSandbox CopyResources)
 
 # GLSLC command to compile shaders to SPIR-V
 find_program(GLSLC glslc)
@@ -37,9 +49,6 @@ endforeach()
 
 # Create a custom target to compile shaders on every build
 add_custom_target(CompileShaders ALL DEPENDS ${SPV_FILES})
-
-# Make sure the shaders are compiled before building the main target
-add_dependencies(VulkanSandbox CompileShaders)
-
-# Copy .spv files to the output directory during the build
-file(COPY ${SPV_FILES} DESTINATION ${CMAKE_BINARY_DIR})
+  
+# Make sure the shaders are compiled before copying the resources
+add_dependencies(CopyResources CompileShaders)

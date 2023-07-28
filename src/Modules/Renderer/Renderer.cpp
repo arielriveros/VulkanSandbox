@@ -409,8 +409,8 @@ void Renderer::DestroyImageViews()
 
 void Renderer::CreateGraphicsPipeline()
 {
-	auto vertShaderCode = ReadFile("../default.frag.spv");
-	auto fragShaderCode = ReadFile("../default.frag.spv");
+	auto vertShaderCode = ReadFile("../resources/shaders/default.vert.spv");
+	auto fragShaderCode = ReadFile("../resources/shaders/default.frag.spv");
 }
 
 std::vector<char> Renderer::ReadFile(const std::string& filename)

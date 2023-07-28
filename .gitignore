@@ -26,3 +26,4 @@ CMakeSettings.json
 *.exe
 *.out
 *.app
+*.spv
