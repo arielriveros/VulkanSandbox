@@ -69,9 +69,12 @@ private:
 	void DestroyImageViews();
 
 	void CreateGraphicsPipeline();
+	void DestroyGraphicsPipeline();
 	void DestroyPipelineLayout();
 	std::vector<char> ReadFile(const std::string& filename); // Move to specialized class later
 	VkShaderModule CreateShaderModule(const std::vector<char>& code);
+	void CreateRenderPass();
+	void DestroyRenderPass();
 
 	bool CheckValidationLayerSupport();
 	std::vector<const char*> GetRequiredExtensions();
@@ -102,6 +105,8 @@ private:
 	VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
 	VkQueue m_PresentQueue = VK_NULL_HANDLE;
 	VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;
+	VkRenderPass m_RenderPass = VK_NULL_HANDLE;
+	VkPipeline m_GraphicsPipeline = VK_NULL_HANDLE;
 	VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
 
 	std::vector<VkImage> m_SwapChainImages;
