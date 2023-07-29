@@ -28,6 +28,8 @@ void App::Run()
 		glfwPollEvents();
 		m_Renderer->Update();
 	}
+
+	m_Renderer->WaitIdle();
 }
 
 void App::Exit()

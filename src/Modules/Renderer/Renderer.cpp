@@ -26,17 +26,29 @@ void Renderer::Initialize()
 	CreateImageViews();
 	CreateRenderPass();
 	CreateGraphicsPipeline();
+	CreateFramebuffers();
+	CreateCommandPool();
+	CreateCommandBuffer();
+	CreateSyncObjects();
 }
 
 void Renderer::Update()
 {
+	DrawFrame();
+}
 
+void Renderer::WaitIdle()
+{
+	vkDeviceWaitIdle(m_Device);
 }
 
 void Renderer::Terminate()
 {
+	DestroySyncObjects();
+	DestroyCommandPool();
 	DestroyGraphicsPipeline();
 	DestroyPipelineLayout();
+	DestroyFramebuffers();
 	DestroyRenderPass();
 	DestroyImageViews();
 	DestroySwapChain();
@@ -175,14 +187,14 @@ bool Renderer::IsDeviceSuitable(VkPhysicalDevice device)
 
 void Renderer::CreateDevice()
 {
-	QueueFamilyIndices indices = FindQueueFamilies(m_PhysicalDevice);
+	m_QueueFamilies = FindQueueFamilies(m_PhysicalDevice);
 	
 	float queuePriority = 1.0f;
 
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 	std::set<uint32_t> uniqueQueueFamilies = {
-		indices.GraphicsFamily.value(),
-		indices.PresentFamily.value()
+		m_QueueFamilies.GraphicsFamily.value(),
+		m_QueueFamilies.PresentFamily.value()
 	};
 
 	for (uint32_t queueFamily : uniqueQueueFamilies)
@@ -212,8 +224,8 @@ void Renderer::CreateDevice()
 	if (result != VK_SUCCESS)
 		throw std::runtime_error("Failed to create logical device");
 
-	vkGetDeviceQueue(m_Device, indices.GraphicsFamily.value(), 0, &m_GraphicsQueue);
-	vkGetDeviceQueue(m_Device, indices.PresentFamily.value(), 0, &m_PresentQueue);
+	vkGetDeviceQueue(m_Device, m_QueueFamilies.GraphicsFamily.value(), 0, &m_GraphicsQueue);
+	vkGetDeviceQueue(m_Device, m_QueueFamilies.PresentFamily.value(), 0, &m_PresentQueue);
 }
 
 void Renderer::DestroyDevice()
@@ -341,10 +353,9 @@ void Renderer::CreateSwapChain()
 		createInfo.imageArrayLayers = 1;
 		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-	QueueFamilyIndices indices = FindQueueFamilies(m_PhysicalDevice);
-	uint32_t queueFamilyIndices[] = { indices.GraphicsFamily.value(), indices.PresentFamily.value() };
+	uint32_t queueFamilyIndices[] = { m_QueueFamilies.GraphicsFamily.value(), m_QueueFamilies.PresentFamily.value() };
 
-	if (indices.GraphicsFamily != indices.PresentFamily)
+	if (m_QueueFamilies.GraphicsFamily != m_QueueFamilies.PresentFamily)
 	{
 		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 		createInfo.queueFamilyIndexCount = 2;
@@ -616,21 +627,206 @@ void Renderer::CreateRenderPass()
 		subpass.colorAttachmentCount = 1;
 		subpass.pColorAttachments = &colorAttachmentRef;
 
+	VkSubpassDependency dependency{};
+		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+		dependency.dstSubpass = 0;
+		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependency.srcAccessMask = 0;
+		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
 	VkRenderPassCreateInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 		renderPassInfo.attachmentCount = 1;
 		renderPassInfo.pAttachments = &colorAttachment;
 		renderPassInfo.subpassCount = 1;
 		renderPassInfo.pSubpasses = &subpass;
+		renderPassInfo.dependencyCount = 1;
+		renderPassInfo.pDependencies = &dependency;
 
 	VkResult result = vkCreateRenderPass(m_Device, &renderPassInfo, nullptr, &m_RenderPass);
 	if (result != VK_SUCCESS)
-		throw std::runtime_error("failed to create render pass!");
+		throw std::runtime_error("Failed to create render pass");
 }
 
 void Renderer::DestroyRenderPass()
 {
 	vkDestroyRenderPass(m_Device, m_RenderPass, nullptr);
+}
+
+void Renderer::CreateFramebuffers()
+{
+	m_SwapChainFramebuffers.resize(m_SwapChainImageViews.size());
+	for (size_t i = 0; i < m_SwapChainImageViews.size(); i++)
+	{
+		VkImageView attachments[] = {
+			m_SwapChainImageViews[i]
+		};
+
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = m_RenderPass;
+		framebufferInfo.attachmentCount = 1;
+		framebufferInfo.pAttachments = attachments;
+		framebufferInfo.width = m_SwapChainExtent.width;
+		framebufferInfo.height = m_SwapChainExtent.height;
+		framebufferInfo.layers = 1;
+
+		VkResult result = vkCreateFramebuffer(m_Device, &framebufferInfo, nullptr, &m_SwapChainFramebuffers[i]);
+		if (result != VK_SUCCESS)
+			throw std::runtime_error("Failed to create framebuffer");
+	}
+}
+
+void Renderer::DestroyFramebuffers()
+{
+	for (auto framebuffer : m_SwapChainFramebuffers)
+		vkDestroyFramebuffer(m_Device, framebuffer, nullptr);
+}
+
+void Renderer::CreateCommandPool()
+{
+	VkCommandPoolCreateInfo poolInfo{};
+		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		poolInfo.queueFamilyIndex = m_QueueFamilies.GraphicsFamily.value();
+
+	VkResult result = vkCreateCommandPool(m_Device, &poolInfo, nullptr, &m_CommandPool);
+	if (result != VK_SUCCESS)
+		throw std::runtime_error("Failed to create command pool");
+}
+
+void Renderer::DestroyCommandPool()
+{
+	vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
+}
+
+void Renderer::CreateCommandBuffer()
+{
+	VkCommandBufferAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.commandPool = m_CommandPool;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandBufferCount = 1;
+	
+	VkResult result = vkAllocateCommandBuffers(m_Device, &allocInfo, &m_CommandBuffer);
+	if (result != VK_SUCCESS)
+		throw std::runtime_error("Failed to allocate command buffers");
+}
+
+void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+{
+	VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = 0; // Optional
+		beginInfo.pInheritanceInfo = nullptr; // Optional
+	
+	VkResult beginCmdBufferResult = vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	if (beginCmdBufferResult != VK_SUCCESS)
+		throw std::runtime_error("Failed to begin recording command buffer");
+
+	VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+	VkRenderPassBeginInfo renderPassInfo{};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass = m_RenderPass;
+		renderPassInfo.framebuffer = m_SwapChainFramebuffers[imageIndex];
+		renderPassInfo.renderArea.offset = { 0, 0 };
+		renderPassInfo.renderArea.extent = m_SwapChainExtent;
+		renderPassInfo.clearValueCount = 1;
+		renderPassInfo.pClearValues = &clearColor;
+
+	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
+
+	VkViewport viewport{};
+		viewport.x = 0.0f;
+		viewport.y = 0.0f;
+		viewport.width = static_cast<float>(m_SwapChainExtent.width);
+		viewport.height = static_cast<float>(m_SwapChainExtent.height);
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+	VkRect2D scissor{};
+		scissor.offset = { 0, 0 };
+		scissor.extent = m_SwapChainExtent;
+	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+	vkCmdEndRenderPass(commandBuffer);
+	
+	VkResult recordCmdBufferResult = vkEndCommandBuffer(commandBuffer);
+	if (recordCmdBufferResult != VK_SUCCESS)
+		throw std::runtime_error("Failed to record command buffer");
+}
+
+void Renderer::CreateSyncObjects()
+{
+	VkSemaphoreCreateInfo semaphoreInfo{};
+		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	VkFenceCreateInfo fenceInfo{};
+		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	VkResult createImageAvailableSemaphoreResult = vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_ImageAvailableSemaphore);
+	VkResult createRenderFinishedSemaphoreResult= vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_RenderFinishedSemaphore);
+	VkResult createFenceResult = vkCreateFence(m_Device, &fenceInfo, nullptr, &m_InFlightFence);
+
+	if (createImageAvailableSemaphoreResult != VK_SUCCESS || createRenderFinishedSemaphoreResult != VK_SUCCESS || createFenceResult  != VK_SUCCESS)
+		throw std::runtime_error("Failed to create semaphores");
+}
+
+void Renderer::DestroySyncObjects()
+{
+	vkDestroySemaphore(m_Device, m_ImageAvailableSemaphore, nullptr);
+	vkDestroySemaphore(m_Device, m_RenderFinishedSemaphore, nullptr);
+	vkDestroyFence(m_Device, m_InFlightFence, nullptr);
+}
+
+void Renderer::DrawFrame()
+{
+	vkWaitForFences(m_Device, 1, &m_InFlightFence, VK_TRUE, UINT64_MAX);
+	vkResetFences(m_Device, 1, &m_InFlightFence);
+
+	uint32_t imageIndex;
+	vkAcquireNextImageKHR(m_Device, m_SwapChain, UINT64_MAX, m_ImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+	vkResetCommandBuffer(m_CommandBuffer, 0);
+	RecordCommandBuffer(m_CommandBuffer, imageIndex);
+
+	VkSemaphore waitSemaphores[] = { m_ImageAvailableSemaphore };
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	VkSemaphore signalSemaphores[] = { m_RenderFinishedSemaphore };
+
+	VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = waitSemaphores;
+		submitInfo.pWaitDstStageMask = waitStages;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &m_CommandBuffer;
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = signalSemaphores;
+
+	VkResult result = vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, m_InFlightFence);
+	if (result != VK_SUCCESS)
+		throw std::runtime_error("Failed to submit draw command buffer");
+
+	VkPresentInfoKHR presentInfo{};
+		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+		presentInfo.waitSemaphoreCount = 1;
+		presentInfo.pWaitSemaphores = signalSemaphores;
+
+	VkSwapchainKHR swapChains[] = { m_SwapChain };
+		presentInfo.swapchainCount = 1;
+		presentInfo.pSwapchains = swapChains;
+		presentInfo.pImageIndices = &imageIndex;
+		presentInfo.pResults = nullptr; // Optional
+
+	vkQueuePresentKHR(m_PresentQueue, &presentInfo);
+	
 }
 
 bool Renderer::CheckValidationLayerSupport()

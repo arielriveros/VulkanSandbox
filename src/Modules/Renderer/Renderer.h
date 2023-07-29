@@ -45,6 +45,7 @@ public:
 
 	void Initialize();
 	void Update();
+	void WaitIdle();
 	void Terminate();
 
 private:
@@ -76,6 +77,19 @@ private:
 	void CreateRenderPass();
 	void DestroyRenderPass();
 
+	void CreateFramebuffers();
+	void DestroyFramebuffers();
+
+	void CreateCommandPool();
+	void DestroyCommandPool();
+	void CreateCommandBuffer();
+	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+
+	void CreateSyncObjects();
+	void DestroySyncObjects();
+
+	void DrawFrame();
+
 	bool CheckValidationLayerSupport();
 	std::vector<const char*> GetRequiredExtensions();
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
@@ -98,12 +112,14 @@ private:
 private:
 	GLFWwindow* m_WindowRef;
 
-	VkInstance m_Instance = VK_NULL_HANDLE;
-	VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
-	VkDevice m_Device = VK_NULL_HANDLE;
-	VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
+	VkInstance m_Instance;
+	VkPhysicalDevice m_PhysicalDevice;
+	VkDevice m_Device;
+	VkQueue m_GraphicsQueue;
+	VkQueue m_PresentQueue;
+	QueueFamilyIndices m_QueueFamilies;
+
 	VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
-	VkQueue m_PresentQueue = VK_NULL_HANDLE;
 	VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;
 	VkRenderPass m_RenderPass = VK_NULL_HANDLE;
 	VkPipeline m_GraphicsPipeline = VK_NULL_HANDLE;
@@ -113,6 +129,16 @@ private:
 	VkFormat m_SwapChainImageFormat = VK_FORMAT_UNDEFINED;
 	VkExtent2D m_SwapChainExtent = {0, 0};
 	std::vector<VkImageView> m_SwapChainImageViews;
+	std::vector<VkFramebuffer> m_SwapChainFramebuffers;
 
+	VkCommandPool m_CommandPool = VK_NULL_HANDLE;
+	VkCommandBuffer m_CommandBuffer;
+
+	// Synchronization
+	VkSemaphore m_ImageAvailableSemaphore = VK_NULL_HANDLE;
+	VkSemaphore m_RenderFinishedSemaphore = VK_NULL_HANDLE;
+	VkFence m_InFlightFence = VK_NULL_HANDLE;
+
+	// Debugging
 	VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
 };
