@@ -11,6 +11,10 @@ public:
 	void Init();
 	void Run();
 	void Exit();
+	void OnResize(int width, int height);
+
+private:
+	static void OnResizeCallback(GLFWwindow* window, int width, int height);
 
 private:
 	std::unique_ptr<Renderer> m_Renderer;

@@ -5,6 +5,8 @@
 #include <optional>
 #include "../ModuleInterface.h"
 
+const int MAX_FRAMES_IN_FLIGHT = 2;
+
 const std::vector<const char*> validationLayers = {
 	"VK_LAYER_KHRONOS_validation"
 };
@@ -47,6 +49,7 @@ public:
 	void Update();
 	void WaitIdle();
 	void Terminate();
+	void Resize(uint32_t width, uint32_t height);
 
 private:
 	void CreateInstance();
@@ -68,6 +71,7 @@ private:
 	void DestroySwapChain();
 	void CreateImageViews();
 	void DestroyImageViews();
+	void RecreateSwapChain();
 
 	void CreateGraphicsPipeline();
 	void DestroyGraphicsPipeline();
@@ -82,7 +86,7 @@ private:
 
 	void CreateCommandPool();
 	void DestroyCommandPool();
-	void CreateCommandBuffer();
+	void CreateCommandBuffers();
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
 	void CreateSyncObjects();
@@ -110,6 +114,9 @@ private:
 		const VkAllocationCallbacks* pAllocator);
 
 private:
+	uint32_t m_Width, m_Height;
+	bool m_FramebufferResized = false;
+
 	GLFWwindow* m_WindowRef;
 
 	VkInstance m_Instance;
@@ -132,12 +139,13 @@ private:
 	std::vector<VkFramebuffer> m_SwapChainFramebuffers;
 
 	VkCommandPool m_CommandPool = VK_NULL_HANDLE;
-	VkCommandBuffer m_CommandBuffer;
+	std::vector<VkCommandBuffer> m_CommandBuffers;
+	uint32_t m_CurrentFrame = 0;
 
 	// Synchronization
-	VkSemaphore m_ImageAvailableSemaphore = VK_NULL_HANDLE;
-	VkSemaphore m_RenderFinishedSemaphore = VK_NULL_HANDLE;
-	VkFence m_InFlightFence = VK_NULL_HANDLE;
+	std::vector<VkSemaphore> m_ImageAvailableSemaphores;
+	std::vector<VkSemaphore> m_RenderFinishedSemaphores;
+	std::vector<VkFence> m_InFlightFences;
 
 	// Debugging
 	VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
