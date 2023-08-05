@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <optional>
+#include <glm/glm.hpp>
 #include "../ModuleInterface.h"
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -37,6 +38,47 @@ struct SwapChainSupportDetails
 	VkSurfaceCapabilitiesKHR Capabilities;
 	std::vector<VkSurfaceFormatKHR> Formats;
 	std::vector<VkPresentModeKHR> PresentModes;
+};
+
+struct Vertex
+{
+	glm::vec2 Position;
+	glm::vec3 Color;
+
+	static VkVertexInputBindingDescription GetBindingDescription()
+	{
+		VkVertexInputBindingDescription bindingDescription{};
+		bindingDescription.binding = 0;
+		bindingDescription.stride = sizeof(Vertex);
+		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+		return bindingDescription;
+	}
+
+	static std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions()
+	{
+		std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+		attributeDescriptions[0].binding = 0;
+		attributeDescriptions[0].location = 0;
+		attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescriptions[0].offset = offsetof(Vertex, Position);
+
+		attributeDescriptions[1].binding = 0;
+		attributeDescriptions[1].location = 1;
+		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+		attributeDescriptions[1].offset = offsetof(Vertex, Color);
+
+		return attributeDescriptions;
+	}
+};
+
+const std::vector<Vertex> vertices = {
+	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+	{{-0.5f, -0.5f}, {1.0f, 0.0f, 1.0f}},
 };
 
 class Renderer: public IModule
@@ -83,6 +125,10 @@ private:
 
 	void CreateFramebuffers();
 	void DestroyFramebuffers();
+
+	void CreateVertexBuffer();
+	void DestroyVertexBuffer();
+	uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 	void CreateCommandPool();
 	void DestroyCommandPool();
@@ -141,6 +187,9 @@ private:
 	VkCommandPool m_CommandPool = VK_NULL_HANDLE;
 	std::vector<VkCommandBuffer> m_CommandBuffers;
 	uint32_t m_CurrentFrame = 0;
+
+	VkBuffer m_VertexBuffer;
+	VkDeviceMemory m_VertexBufferMemory;
 
 	// Synchronization
 	std::vector<VkSemaphore> m_ImageAvailableSemaphores;
