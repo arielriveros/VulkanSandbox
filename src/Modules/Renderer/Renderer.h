@@ -4,23 +4,10 @@
 #include <vector>
 #include <optional>
 #include <glm/glm.hpp>
+#include "ValidationLayer/ValidationLayer.h"
 #include "../ModuleInterface.h"
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
-
-const std::vector<const char*> validationLayers = {
-	"VK_LAYER_KHRONOS_validation"
-};
-
-const std::vector<const char*> deviceExtensions = {
-	VK_KHR_SWAPCHAIN_EXTENSION_NAME
-};
-
-#ifdef NDEBUG
-const bool ENABLE_VALIDATION_LAYERS = false;
-#else
-const bool ENABLE_VALIDATION_LAYERS = true;
-#endif
 
 struct QueueFamilyIndices
 {
@@ -140,25 +127,8 @@ private:
 
 	void DrawFrame();
 
-	bool CheckValidationLayerSupport();
-	std::vector<const char*> GetRequiredExtensions();
-	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
-		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-		VkDebugUtilsMessageTypeFlagsEXT messageType,
-		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-		void* pUserData);
-	void SetupDebugMessenger();
-	static VkResult CreateDebugUtilsMessengerEXT(
-		VkInstance instance,
-		const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-		const VkAllocationCallbacks* pAllocator,
-		VkDebugUtilsMessengerEXT* pDebugMessenger);
-	void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-	static void DestroyDebugUtilsMessengerEXT(
-		VkInstance instance,
-		VkDebugUtilsMessengerEXT debugMessenger,
-		const VkAllocationCallbacks* pAllocator);
-
+	void CreateValidationLayer();
+	void DestroyValidationLayer();
 private:
 	uint32_t m_Width, m_Height;
 	bool m_FramebufferResized = false;
@@ -196,6 +166,5 @@ private:
 	std::vector<VkSemaphore> m_RenderFinishedSemaphores;
 	std::vector<VkFence> m_InFlightFences;
 
-	// Debugging
-	VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
+	ValidationLayer* m_ValidationLayer;
 };
