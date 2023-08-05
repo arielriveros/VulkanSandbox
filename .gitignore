@@ -27,4 +27,4 @@ CMakeSettings.json
 *.out
 *.app
 *.spv
-/resources/shaders/default.vert.spv
+/resources/shaders/*.spv
