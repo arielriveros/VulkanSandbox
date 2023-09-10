@@ -4,6 +4,8 @@
 #include <vector>
 #include <optional>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <chrono>
 #include "ValidationLayer/ValidationLayer.h"
 #include "../ModuleInterface.h"
 
@@ -29,7 +31,7 @@ struct SwapChainSupportDetails
 
 struct Vertex
 {
-	glm::vec2 Position;
+	glm::vec3 Position;
 	glm::vec3 Color;
 
 	static VkVertexInputBindingDescription GetBindingDescription()
@@ -59,11 +61,17 @@ struct Vertex
 	}
 };
 
+struct UniformBufferObject {
+	glm::mat4 Model;
+	glm::mat4 View;
+	glm::mat4 Projection;
+};
+
 const std::vector<Vertex> vertices = {
-	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+	{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+	{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}}
 };
 
 const std::vector<uint16_t> indices = {
@@ -119,11 +127,20 @@ private:
 	void DestroyVertexBuffer();
 	void CreateIndexBuffer();
 	void DestroyIndexBuffer();
+	void CreateUniformBuffers();
+	void DestroyUniformBuffers();
+	void UpdateUniformbuffer(uint32_t currentImage);
 
 	uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 	void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+
+	void CreateDescriptorSetLayout();
+	void DestroyDescriptorSetLayout();
+	void CreateDescriptorPool();
+	void DestroyeDescriptorPool();
+	void CreateDescriptorSets();
 
 	void CreateCommandPool();
 	void DestroyCommandPool();
@@ -155,6 +172,7 @@ private:
 	VkRenderPass m_RenderPass = VK_NULL_HANDLE;
 	VkPipeline m_GraphicsPipeline = VK_NULL_HANDLE;
 	VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
+	VkDescriptorSetLayout m_DescriptorSetLayout = VK_NULL_HANDLE;
 
 	std::vector<VkImage> m_SwapChainImages;
 	VkFormat m_SwapChainImageFormat = VK_FORMAT_UNDEFINED;
@@ -171,6 +189,13 @@ private:
 
 	VkBuffer m_IndexBuffer;
 	VkDeviceMemory m_IndexBufferMemory;
+
+	VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
+	std::vector<VkDescriptorSet> m_DescriptorSets;
+
+	std::vector<VkBuffer> m_UniformBuffers;
+	std::vector<VkDeviceMemory> m_UniformBuffersMemory;
+	std::vector<void*> m_UniformBuffersMapped;
 
 	// Synchronization
 	std::vector<VkSemaphore> m_ImageAvailableSemaphores;
