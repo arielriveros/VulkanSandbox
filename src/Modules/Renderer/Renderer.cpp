@@ -4,10 +4,9 @@
 #include "Renderer.h"
 
 
-Renderer::Renderer(GLFWwindow* window)
+Renderer::Renderer(Window* window) : m_Window{ window }
 {
 	std::cout << "Renderer Constructor" << std::endl;
-	m_WindowRef = window;
 }
 
 Renderer::~Renderer()
@@ -252,7 +251,7 @@ void Renderer::DestroyDevice()
 
 void Renderer::CreateSurface()
 {
-	if (glfwCreateWindowSurface(m_Instance, m_WindowRef, nullptr, &m_Surface) != VK_SUCCESS)
+	if (glfwCreateWindowSurface(m_Instance, m_Window->GetWindow(), nullptr, &m_Surface) != VK_SUCCESS)
 		throw std::runtime_error("Failed to create window surface");
 }
 
@@ -333,7 +332,7 @@ VkExtent2D Renderer::SelectSwapExtent(const VkSurfaceCapabilitiesKHR& capabiliti
 	}
 	else {
 		int width, height;
-		glfwGetFramebufferSize(m_WindowRef, &width, &height);
+		glfwGetFramebufferSize(m_Window->GetWindow(), &width, &height);
 
 		VkExtent2D actualExtent = {
 			static_cast<uint32_t>(width),
@@ -426,7 +425,7 @@ void Renderer::CreateImageViews()
 			createInfo.subresourceRange.levelCount = 1;
 			createInfo.subresourceRange.baseArrayLayer = 0;
 			createInfo.subresourceRange.layerCount = 1;
-
+			
 			VkResult result = vkCreateImageView(m_Device, &createInfo, nullptr, &m_SwapChainImageViews[i]);
 			if (result != VK_SUCCESS)
 				throw std::runtime_error("Failed to create image views");

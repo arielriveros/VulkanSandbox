@@ -2,6 +2,8 @@ add_executable(${PROJECT_NAME}
 	"entry.cpp"
 	"App/App.h"
 	"App/App.cpp"
+	"Window/Window.h"
+	"Window/Window.cpp"
 	"Modules/ModuleInterface.h"
 	"Modules/Renderer/Renderer.h"
 	"Modules/Renderer/Renderer.cpp"

@@ -1,6 +1,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <memory>
+#include "../Window/Window.h"
 #include "../Modules/Renderer/Renderer.h"
 
 class App
@@ -18,7 +19,5 @@ private:
 
 private:
 	std::unique_ptr<Renderer> m_Renderer;
-	GLFWwindow* m_Window = nullptr;
-	uint32_t m_Width = 800;
-	uint32_t m_Height = 600;
+	Window m_Window{ "App", 800, 600 };
 };

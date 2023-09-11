@@ -1,5 +1,3 @@
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <optional>
@@ -8,6 +6,7 @@
 #include <chrono>
 #include "ValidationLayer/ValidationLayer.h"
 #include "../ModuleInterface.h"
+#include "../../Window/Window.h"
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -81,7 +80,7 @@ const std::vector<uint16_t> indices = {
 class Renderer: public IModule
 {
 public:
-	Renderer(GLFWwindow* window);
+	Renderer(Window* window);
 	~Renderer();
 
 	void Initialize();
@@ -158,7 +157,7 @@ private:
 	uint32_t m_Width, m_Height;
 	bool m_FramebufferResized = false;
 
-	GLFWwindow* m_WindowRef;
+	Window* m_Window;
 
 	VkInstance m_Instance;
 	VkPhysicalDevice m_PhysicalDevice;

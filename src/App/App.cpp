@@ -3,7 +3,6 @@
 
 App::App()
 {
-
 }
 
 App::~App()
@@ -13,21 +12,18 @@ App::~App()
 
 void App::Init()
 {
-	glfwInit();
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-	m_Window = glfwCreateWindow(m_Width, m_Height, "Window", nullptr, nullptr);
-	m_Renderer = std::make_unique<Renderer>(m_Window);
+	m_Window.Initialize();
+	m_Renderer = std::make_unique<Renderer>(&m_Window);
 	m_Renderer->Initialize();
-	glfwSetWindowUserPointer(m_Window, this);
-	glfwSetFramebufferSizeCallback(m_Window, OnResizeCallback);
+	glfwSetWindowUserPointer(m_Window.GetWindow(), this);
+	glfwSetFramebufferSizeCallback(m_Window.GetWindow(), OnResizeCallback);
 }
 
 void App::Run()
 {
-	while (!glfwWindowShouldClose(m_Window))
+	while (!m_Window.ShouldClose())
 	{
-		glfwPollEvents();
+		m_Window.PollEvents();
 		m_Renderer->Update();
 	}
 
@@ -36,9 +32,8 @@ void App::Run()
 
 void App::Exit()
 {
-	glfwDestroyWindow(m_Window);
-	glfwTerminate();
 	m_Renderer->Terminate();
+	m_Window.Terminate();
 }
 
 void App::OnResize(int width, int height)
