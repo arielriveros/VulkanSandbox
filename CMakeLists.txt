@@ -22,23 +22,28 @@ set(EXTERNAL_LIBS
 add_subdirectory(lib)
 add_subdirectory(src)
 
-# Resources
-add_custom_target(CopyResources ALL
+set_target_properties(VulkanSandbox PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG "${PROJECT_BINARY_DIR}/bin/Debug")
+set_target_properties(VulkanSandbox PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE "${PROJECT_BINARY_DIR}/bin/Release")
+
+###################### Shaders ######################
+add_custom_target(CopyCompiledShaders ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${PROJECT_SOURCE_DIR}/resources
-    ${PROJECT_BINARY_DIR}/resources
+    ${PROJECT_SOURCE_DIR}/resources/shaders/compiled
+    ${PROJECT_BINARY_DIR}/bin/$<CONFIG>/resources/shaders
 )
 
-add_dependencies(VulkanSandbox CopyResources)
+add_dependencies(VulkanSandbox CopyCompiledShaders)
 
 # GLSLC command to compile shaders to SPIR-V
 find_program(GLSLC glslc)
 set(shader_path ${CMAKE_HOME_DIRECTORY}/resources/shaders/)
+set(compiled_shader_path ${CMAKE_HOME_DIRECTORY}/resources/shaders/compiled/)
 file(GLOB shaders RELATIVE ${CMAKE_SOURCE_DIR} "${shader_path}*.vert" "${shader_path}*.frag")
 
 foreach(shader ${shaders})
     set(input_glsl "${CMAKE_HOME_DIRECTORY}/${shader}")
-    set(output_spv "${input_glsl}.spv")
+    get_filename_component(shader_name ${shader} NAME)
+    set(output_spv "${compiled_shader_path}${shader_name}.spv")
     add_custom_command(
         OUTPUT "${output_spv}"
         COMMAND "${GLSLC}" "${input_glsl}" "-o" "${output_spv}"
@@ -51,4 +56,6 @@ endforeach()
 add_custom_target(CompileShaders ALL DEPENDS ${SPV_FILES})
   
 # Make sure the shaders are compiled before copying the resources
-add_dependencies(CopyResources CompileShaders)
+add_dependencies(CopyCompiledShaders CompileShaders)
+
+###################### End Shaders ######################

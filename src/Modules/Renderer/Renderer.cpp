@@ -456,8 +456,8 @@ void Renderer::RecreateSwapChain()
 
 void Renderer::CreateGraphicsPipeline()
 {
-	auto vertShaderCode = ReadFile("../resources/shaders/default.vert.spv");
-	auto fragShaderCode = ReadFile("../resources/shaders/default.frag.spv");
+	auto vertShaderCode = ReadFile("resources/shaders/default.vert.spv");
+	auto fragShaderCode = ReadFile("resources/shaders/default.frag.spv");
 
 	auto bindingDescription = Vertex::GetBindingDescription();
 	auto attributeDescriptions = Vertex::GetAttributeDescriptions();
