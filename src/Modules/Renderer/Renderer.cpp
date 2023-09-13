@@ -1073,6 +1073,8 @@ void Renderer::DestroySyncObjects()
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		m_Device.destroyFence(m_InFlightFences[i]);
+		m_Device.destroySemaphore(m_RenderFinishedSemaphores[i]);
+		m_Device.destroySemaphore(m_ImageAvailableSemaphores[i]);
 	}
 }
 

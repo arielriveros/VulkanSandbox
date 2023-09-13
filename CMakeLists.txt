@@ -10,6 +10,7 @@ find_package(Vulkan REQUIRED)
 set(EXTERNAL_LIBS_INCLUDES
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/glfw/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/glm"
+    "${CMAKE_CURRENT_SOURCE_DIR}/lib/stb"
     "${Vulkan_INCLUDE_DIRS}"
 )
 
@@ -59,3 +60,18 @@ add_custom_target(CompileShaders ALL DEPENDS ${SPV_FILES})
 add_dependencies(CopyCompiledShaders CompileShaders)
 
 ###################### End Shaders ######################
+
+###################### Assets ######################
+
+# Copy all files in the resources/assets folder to the build directory after clearing it
+add_custom_target(CopyAssets ALL
+    COMMAND ${CMAKE_COMMAND} -E remove_directory
+    ${PROJECT_BINARY_DIR}/bin/$<CONFIG>/resources/assets
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${PROJECT_SOURCE_DIR}/resources/assets
+    ${PROJECT_BINARY_DIR}/bin/$<CONFIG>/resources/assets
+)
+
+add_dependencies(VulkanSandbox CopyAssets)
+
+###################### End Assets ######################
