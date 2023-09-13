@@ -3,7 +3,7 @@
 #include <optional>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <chrono>
+#include "Pipeline/Pipeline.h"
 #include "ValidationLayer/ValidationLayer.h"
 #include "../ModuleInterface.h"
 #include "../../Window/Window.h"
@@ -37,27 +37,35 @@ struct Vertex
 	glm::vec3 Position;
 	glm::vec3 Color;
 
+	static Descriptions GetDescriptions()
+	{
+		Descriptions descriptions;
+		descriptions.BindingDescription = GetBindingDescription();
+		descriptions.AttributeDescriptions = GetAttributeDescriptions();
+		return descriptions;
+	}
+
 	static vk::VertexInputBindingDescription GetBindingDescription()
 	{
 		return vk::VertexInputBindingDescription(
-			/*binding*/ 	0,
-			/*stride*/ 		sizeof(Vertex),
-			/*inputRate*/ 	vk::VertexInputRate::eVertex
+			0,								// binding
+			sizeof(Vertex),					// stride
+			vk::VertexInputRate::eVertex	// inputRate
 		);
 	}
 
 	static std::array<vk::VertexInputAttributeDescription, 2> GetAttributeDescriptions()
 	{
 		std::array<vk::VertexInputAttributeDescription, 2> attributeDescriptions{};
-		attributeDescriptions[0].binding = 0;
-		attributeDescriptions[0].location = 0;
-		attributeDescriptions[0].format = vk::Format::eR32G32B32Sfloat;
-		attributeDescriptions[0].offset = offsetof(Vertex, Position);
+		attributeDescriptions[0].binding = 0;								// binding
+		attributeDescriptions[0].location = 0;								// location
+		attributeDescriptions[0].format = vk::Format::eR32G32B32Sfloat;		// format
+		attributeDescriptions[0].offset = offsetof(Vertex, Position);		// offset
 
-		attributeDescriptions[1].binding = 0;
-		attributeDescriptions[1].location = 1;
-		attributeDescriptions[1].format = vk::Format::eR32G32B32Sfloat;
-		attributeDescriptions[1].offset = offsetof(Vertex, Color);
+		attributeDescriptions[1].binding = 0;								// binding
+		attributeDescriptions[1].location = 1;								// location
+		attributeDescriptions[1].format = vk::Format::eR32G32B32Sfloat;		// format
+		attributeDescriptions[1].offset = offsetof(Vertex, Color);			// offset
 
 		return attributeDescriptions;
 	}
@@ -116,9 +124,6 @@ private:
 
 	void CreateGraphicsPipeline();
 	void DestroyGraphicsPipeline();
-	void DestroyPipelineLayout();
-	std::vector<char> ReadFile(const std::string& filename); // Move to specialized class later
-	vk::ShaderModule CreateShaderModule(const std::vector<char>& code);
 	void CreateRenderPass();
 	void DestroyRenderPass();
 
@@ -161,6 +166,7 @@ private:
 	bool m_FramebufferResized = false;
 
 	Window* m_Window;
+	Pipeline* m_Pipeline;
 
 	vk::Instance m_Instance;
 	vk::PhysicalDevice m_PhysicalDevice;
@@ -172,8 +178,6 @@ private:
 	VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
 	vk::SwapchainKHR m_SwapChain;
 	vk::RenderPass m_RenderPass;
-	vk::Pipeline m_GraphicsPipeline;
-	vk::PipelineLayout m_PipelineLayout;
 	vk::DescriptorSetLayout m_DescriptorSetLayout;
 
 	std::vector<vk::Image> m_SwapChainImages;

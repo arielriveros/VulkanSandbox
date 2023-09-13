@@ -1,7 +1,7 @@
 #include <iostream>
 #include <set>
-#include <fstream>
 #include <array>
+#include <chrono>
 #include "Renderer.h"
 
 
@@ -58,7 +58,6 @@ void Renderer::Terminate()
 	DestroyeDescriptorPool();
 	DestroyDescriptorSetLayout();
 	DestroyGraphicsPipeline();
-	DestroyPipelineLayout();
 	DestroyRenderPass();
 	DestroyUniformBuffers();
 	DestroySyncObjects();
@@ -426,191 +425,13 @@ void Renderer::RecreateSwapChain()
 
 void Renderer::CreateGraphicsPipeline()
 {
-	auto vertShaderCode = ReadFile("resources/shaders/default.vert.spv");
-	auto fragShaderCode = ReadFile("resources/shaders/default.frag.spv");
-
-	auto bindingDescription = Vertex::GetBindingDescription();
-	auto attributeDescriptions = Vertex::GetAttributeDescriptions();
-
-	vk::ShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
-	vk::ShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
-
-	vk::PipelineShaderStageCreateInfo vertShaderStageInfo(
-		vk::PipelineShaderStageCreateFlags(),
-		vk::ShaderStageFlagBits::eVertex,
-		vertShaderModule,
-		"main"
-	);
-
-	vk::PipelineShaderStageCreateInfo fragShaderStageInfo(
-		vk::PipelineShaderStageCreateFlags(),
-		vk::ShaderStageFlagBits::eFragment,
-		fragShaderModule,
-		"main"
-	);
-
-	vk::PipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
-
-	std::vector<vk::DynamicState> dynamicStates = {
-		vk::DynamicState::eViewport,
-		vk::DynamicState::eScissor
-	};
-
-	vk::PipelineDynamicStateCreateInfo dynamicState( vk::PipelineDynamicStateCreateFlags(), dynamicStates );
-
-	vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
-	vertexInputInfo.setVertexBindingDescriptions( bindingDescription );
-    vertexInputInfo.setVertexAttributeDescriptions( attributeDescriptions );
-
-	vk::PipelineInputAssemblyStateCreateInfo inputAssembly(
-		vk::PipelineInputAssemblyStateCreateFlags(),
-		vk::PrimitiveTopology::eTriangleList
-	);
-
-	vk::Viewport viewport(
-		0.0f,
-		0.0f,
-		static_cast<float>( m_SwapChainExtent.width ),
-		static_cast<float>( m_SwapChainExtent.height ),
-		0.0f,
-		1.0f
-	);
-
-	vk::Rect2D scissor(
-		vk::Offset2D( 0, 0 ),
-		m_SwapChainExtent
-	);
-
-	vk::PipelineViewportStateCreateInfo viewportState(
-		vk::PipelineViewportStateCreateFlags(),
-		1,
-		&viewport,
-		1,
-		&scissor
-	);
-
-	vk::PipelineRasterizationStateCreateInfo rasterizer(
-		vk::PipelineRasterizationStateCreateFlags(),
-		false,
-		false,
-		vk::PolygonMode::eFill,
-		vk::CullModeFlagBits::eBack,
-		vk::FrontFace::eCounterClockwise,
-		false,
-		0.0f,
-		0.0f,
-		0.0f,
-		1.0f
-	);
-
-	vk::PipelineMultisampleStateCreateInfo multisampling(
-		vk::PipelineMultisampleStateCreateFlags(),
-		vk::SampleCountFlagBits::e1,
-		false,
-		1.0f,
-		nullptr,
-		false,
-		false
-	);
-
-	vk::PipelineColorBlendAttachmentState colorBlendAttachment(
-		false,
-		vk::BlendFactor::eOne,
-		vk::BlendFactor::eZero,
-		vk::BlendOp::eAdd,
-		vk::BlendFactor::eOne,
-		vk::BlendFactor::eZero,
-		vk::BlendOp::eAdd,
-		vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
-	);
-
-	vk::PipelineColorBlendStateCreateInfo colorBlending(
-		vk::PipelineColorBlendStateCreateFlags(),
-		false,
-		vk::LogicOp::eCopy,
-		1,
-		&colorBlendAttachment,
-		{ 0.0f, 0.0f, 0.0f, 0.0f }
-	);
-
-	vk::PipelineLayoutCreateInfo pipelineLayoutInfo(
-		vk::PipelineLayoutCreateFlags(),
-		1,
-		&m_DescriptorSetLayout,
-		0,
-		nullptr
-	);
-
-	m_PipelineLayout = m_Device.createPipelineLayout(pipelineLayoutInfo);
-
-	vk::GraphicsPipelineCreateInfo pipelineInfo(
-		vk::PipelineCreateFlags(),
-		2,
-		shaderStages,
-		&vertexInputInfo,
-		&inputAssembly,
-		nullptr,
-		&viewportState,
-		&rasterizer,
-		&multisampling,
-		nullptr,
-		&colorBlending,
-		&dynamicState,
-		m_PipelineLayout,
-		m_RenderPass,
-		0
-	);
-
-	vk::Result result;
-    vk::Pipeline pipeline;
-    std::tie(result, pipeline) = m_Device.createGraphicsPipeline( nullptr, pipelineInfo );
-
-	if (result != vk::Result::eSuccess)
-		throw std::runtime_error("Failed to create graphics pipeline");
-
-	m_GraphicsPipeline = pipeline;
-
-	m_Device.destroyShaderModule(vertShaderModule);
-	m_Device.destroyShaderModule(fragShaderModule);
+	m_Pipeline = new Pipeline(m_Device, m_RenderPass, m_DescriptorSetLayout);
+	m_Pipeline->Create("resources/shaders/default.vert.spv", "resources/shaders/default.frag.spv", Vertex::GetDescriptions());
 }
 
 void Renderer::DestroyGraphicsPipeline()
 {
-	m_Device.destroyPipeline(m_GraphicsPipeline);
-}
-
-void Renderer::DestroyPipelineLayout()
-{
-	vkDestroyPipelineLayout(m_Device, m_PipelineLayout, nullptr);
-}
-
-std::vector<char> Renderer::ReadFile(const std::string& filename)
-{
-	std::ifstream file(filename, std::ios::ate | std::ios::binary);
-
-	if (!file.is_open())
-		throw std::runtime_error("Failed to open file");
-
-	size_t fileSize = (size_t)file.tellg();
-	std::vector<char> buffer(fileSize);
-
-	file.seekg(0);
-	file.read(buffer.data(), fileSize);
-
-	file.close();
-
-	return buffer;
-}
-
-vk::ShaderModule Renderer::CreateShaderModule(const std::vector<char>& code)
-{
-	vk::ShaderModuleCreateInfo createInfo(
-		vk::ShaderModuleCreateFlags(),
-		code.size(),
-		reinterpret_cast<const uint32_t*>(code.data())
-	);
-
-	return m_Device.createShaderModule(createInfo);
+	delete m_Pipeline;
 }
 
 void Renderer::CreateRenderPass()
@@ -924,7 +745,7 @@ void Renderer::CreateDescriptorPool()
 
 void Renderer::DestroyeDescriptorPool()
 {
-	vkDestroyDescriptorPool(m_Device, m_DescriptorPool, nullptr);
+	m_Device.destroyDescriptorPool(m_DescriptorPool);
 }
 
 void Renderer::CreateDescriptorSets()
@@ -1003,7 +824,7 @@ void Renderer::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t ima
 	commandBuffer.begin(beginInfo);
 	
 	const vk::ClearValue clearValues[1]{
-		{vk::ClearColorValue(std::array<float, 4>{1.f, 1.0f, 1.0f, 1.f})}
+		{vk::ClearColorValue(std::array<float, 4>{.05f, 0.f, .05f, 1.f})}
 	};
 
 	vk::RenderPassBeginInfo renderPassInfo(
@@ -1015,7 +836,7 @@ void Renderer::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t ima
 	);
 
 	commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_GraphicsPipeline);
+	m_Pipeline->Bind(commandBuffer);
 
 	vk::Buffer vertexBuffers[] = { m_VertexBuffer };
 	vk::DeviceSize offsets[] = { 0 };
@@ -1037,7 +858,7 @@ void Renderer::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t ima
 	vk::Rect2D scissor(vk::Offset2D(0, 0), m_SwapChainExtent);
 	commandBuffer.setScissor(0, 1, &scissor);
 
-	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout, 0, 1, &m_DescriptorSets[m_CurrentFrame], 0, nullptr);
+	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_Pipeline->GetLayout(), 0, 1, &m_DescriptorSets[m_CurrentFrame], 0, nullptr);
 
 	if(indices.size() > 0)
 		commandBuffer.drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);

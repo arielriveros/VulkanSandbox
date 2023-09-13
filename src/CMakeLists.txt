@@ -7,6 +7,8 @@ add_executable(${PROJECT_NAME}
 	"Modules/ModuleInterface.h"
 	"Modules/Renderer/Renderer.h"
 	"Modules/Renderer/Renderer.cpp"
+	"Modules/Renderer/Pipeline/Pipeline.h"
+	"Modules/Renderer/Pipeline/Pipeline.cpp"
 	"Modules/Renderer/ValidationLayer/ValidationLayer.h"
 	"Modules/Renderer/ValidationLayer/ValidationLayer.cpp")
 
