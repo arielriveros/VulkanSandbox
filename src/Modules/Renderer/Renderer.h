@@ -21,11 +21,15 @@ struct QueueFamilyIndices
 	}
 };
 
+const std::vector<const char*> deviceExtensions = {
+	VK_KHR_SWAPCHAIN_EXTENSION_NAME
+};
+
 struct SwapChainSupportDetails
 {
-	VkSurfaceCapabilitiesKHR Capabilities;
-	std::vector<VkSurfaceFormatKHR> Formats;
-	std::vector<VkPresentModeKHR> PresentModes;
+	vk::SurfaceCapabilitiesKHR Capabilities;
+	std::vector<vk::SurfaceFormatKHR> Formats;
+	std::vector<vk::PresentModeKHR> PresentModes;
 };
 
 struct Vertex
@@ -33,27 +37,26 @@ struct Vertex
 	glm::vec3 Position;
 	glm::vec3 Color;
 
-	static VkVertexInputBindingDescription GetBindingDescription()
+	static vk::VertexInputBindingDescription GetBindingDescription()
 	{
-		VkVertexInputBindingDescription bindingDescription{};
-		bindingDescription.binding = 0;
-		bindingDescription.stride = sizeof(Vertex);
-		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-		return bindingDescription;
+		return vk::VertexInputBindingDescription(
+			/*binding*/ 	0,
+			/*stride*/ 		sizeof(Vertex),
+			/*inputRate*/ 	vk::VertexInputRate::eVertex
+		);
 	}
 
-	static std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions()
+	static std::array<vk::VertexInputAttributeDescription, 2> GetAttributeDescriptions()
 	{
-		std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+		std::array<vk::VertexInputAttributeDescription, 2> attributeDescriptions{};
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
-		attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescriptions[0].format = vk::Format::eR32G32B32Sfloat;
 		attributeDescriptions[0].offset = offsetof(Vertex, Position);
 
 		attributeDescriptions[1].binding = 0;
 		attributeDescriptions[1].location = 1;
-		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+		attributeDescriptions[1].format = vk::Format::eR32G32B32Sfloat;
 		attributeDescriptions[1].offset = offsetof(Vertex, Color);
 
 		return attributeDescriptions;
@@ -93,18 +96,18 @@ private:
 	void CreateInstance();
 	void DestroyInstance();
 	void SelectPhysicalDevice();
-	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
-	bool IsDeviceSuitable(VkPhysicalDevice device);
+	QueueFamilyIndices FindQueueFamilies(vk::PhysicalDevice device);
+	bool IsDeviceSuitable(vk::PhysicalDevice device);
 	void CreateDevice();
 	void DestroyDevice();
 	void CreateSurface();
 	void DestroySurface();
 	
-	bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
-	SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
-	VkSurfaceFormatKHR SelectSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-	VkPresentModeKHR SelectSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
-	VkExtent2D SelectSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+	bool CheckDeviceExtensionSupport(vk::PhysicalDevice device);
+	SwapChainSupportDetails QuerySwapChainSupport(vk::PhysicalDevice device);
+	vk::SurfaceFormatKHR SelectSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats);
+	vk::PresentModeKHR SelectSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes);
+	vk::Extent2D SelectSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities);
 	void CreateSwapChain();
 	void DestroySwapChain();
 	void CreateImageViews();
@@ -115,7 +118,7 @@ private:
 	void DestroyGraphicsPipeline();
 	void DestroyPipelineLayout();
 	std::vector<char> ReadFile(const std::string& filename); // Move to specialized class later
-	VkShaderModule CreateShaderModule(const std::vector<char>& code);
+	vk::ShaderModule CreateShaderModule(const std::vector<char>& code);
 	void CreateRenderPass();
 	void DestroyRenderPass();
 
@@ -130,10 +133,10 @@ private:
 	void DestroyUniformBuffers();
 	void UpdateUniformbuffer(uint32_t currentImage);
 
-	uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+	uint32_t FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
 
-	void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+	vk::Buffer CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::DeviceMemory& bufferMemory);
+	void CopyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
 
 	void CreateDescriptorSetLayout();
 	void DestroyDescriptorSetLayout();
@@ -144,7 +147,7 @@ private:
 	void CreateCommandPool();
 	void DestroyCommandPool();
 	void CreateCommandBuffers();
-	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+	void RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex);
 
 	void CreateSyncObjects();
 	void DestroySyncObjects();
@@ -159,47 +162,47 @@ private:
 
 	Window* m_Window;
 
-	VkInstance m_Instance;
-	VkPhysicalDevice m_PhysicalDevice;
-	VkDevice m_Device;
-	VkQueue m_GraphicsQueue;
-	VkQueue m_PresentQueue;
+	vk::Instance m_Instance;
+	vk::PhysicalDevice m_PhysicalDevice;
+	vk::Device m_Device;
+	vk::Queue m_GraphicsQueue;
+	vk::Queue m_PresentQueue;
 	QueueFamilyIndices m_QueueFamilies;
 
 	VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
-	VkSwapchainKHR m_SwapChain = VK_NULL_HANDLE;
-	VkRenderPass m_RenderPass = VK_NULL_HANDLE;
-	VkPipeline m_GraphicsPipeline = VK_NULL_HANDLE;
-	VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
-	VkDescriptorSetLayout m_DescriptorSetLayout = VK_NULL_HANDLE;
+	vk::SwapchainKHR m_SwapChain;
+	vk::RenderPass m_RenderPass;
+	vk::Pipeline m_GraphicsPipeline;
+	vk::PipelineLayout m_PipelineLayout;
+	vk::DescriptorSetLayout m_DescriptorSetLayout;
 
-	std::vector<VkImage> m_SwapChainImages;
-	VkFormat m_SwapChainImageFormat = VK_FORMAT_UNDEFINED;
-	VkExtent2D m_SwapChainExtent = {0, 0};
-	std::vector<VkImageView> m_SwapChainImageViews;
-	std::vector<VkFramebuffer> m_SwapChainFramebuffers;
+	std::vector<vk::Image> m_SwapChainImages;
+	vk::Format m_SwapChainImageFormat;
+	vk::Extent2D m_SwapChainExtent = {0, 0};
+	std::vector<vk::ImageView> m_SwapChainImageViews;
+	std::vector<vk::Framebuffer> m_SwapChainFramebuffers;
 
-	VkCommandPool m_CommandPool = VK_NULL_HANDLE;
-	std::vector<VkCommandBuffer> m_CommandBuffers;
+	vk::CommandPool m_CommandPool;
+	std::vector<vk::CommandBuffer> m_CommandBuffers;
 	uint32_t m_CurrentFrame = 0;
 
-	VkBuffer m_VertexBuffer;
-	VkDeviceMemory m_VertexBufferMemory;
+	vk::Buffer m_VertexBuffer;
+	vk::DeviceMemory m_VertexBufferMemory;
 
-	VkBuffer m_IndexBuffer;
-	VkDeviceMemory m_IndexBufferMemory;
+	vk::Buffer m_IndexBuffer;
+	vk::DeviceMemory m_IndexBufferMemory;
 
-	VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
-	std::vector<VkDescriptorSet> m_DescriptorSets;
+	vk::DescriptorPool m_DescriptorPool;
+	std::vector<vk::DescriptorSet> m_DescriptorSets;
 
-	std::vector<VkBuffer> m_UniformBuffers;
-	std::vector<VkDeviceMemory> m_UniformBuffersMemory;
+	std::vector<vk::Buffer> m_UniformBuffers;
+	std::vector<vk::DeviceMemory> m_UniformBuffersMemory;
 	std::vector<void*> m_UniformBuffersMapped;
 
 	// Synchronization
-	std::vector<VkSemaphore> m_ImageAvailableSemaphores;
-	std::vector<VkSemaphore> m_RenderFinishedSemaphores;
-	std::vector<VkFence> m_InFlightFences;
+	std::vector<vk::Semaphore> m_ImageAvailableSemaphores;
+	std::vector<vk::Semaphore> m_RenderFinishedSemaphores;
+	std::vector<vk::Fence> m_InFlightFences;
 
 	ValidationLayer* m_ValidationLayer;
 };
