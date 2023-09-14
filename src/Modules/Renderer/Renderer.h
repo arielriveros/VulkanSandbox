@@ -36,6 +36,7 @@ struct Vertex
 {
 	glm::vec3 Position;
 	glm::vec3 Color;
+	glm::vec2 TexCoord;
 
 	static Descriptions GetDescriptions()
 	{
@@ -54,19 +55,27 @@ struct Vertex
 		);
 	}
 
-	static std::array<vk::VertexInputAttributeDescription, 2> GetAttributeDescriptions()
+	static std::vector<vk::VertexInputAttributeDescription> GetAttributeDescriptions()
 	{
-		std::array<vk::VertexInputAttributeDescription, 2> attributeDescriptions{};
-		attributeDescriptions[0].binding = 0;								// binding
-		attributeDescriptions[0].location = 0;								// location
-		attributeDescriptions[0].format = vk::Format::eR32G32B32Sfloat;		// format
-		attributeDescriptions[0].offset = offsetof(Vertex, Position);		// offset
-
-		attributeDescriptions[1].binding = 0;								// binding
-		attributeDescriptions[1].location = 1;								// location
-		attributeDescriptions[1].format = vk::Format::eR32G32B32Sfloat;		// format
-		attributeDescriptions[1].offset = offsetof(Vertex, Color);			// offset
-
+		std::vector<vk::VertexInputAttributeDescription> attributeDescriptions{};
+		attributeDescriptions.push_back(vk::VertexInputAttributeDescription(
+			0,								// location
+			0,								// binding
+			vk::Format::eR32G32B32Sfloat,	// format
+			offsetof(Vertex, Position)		// offset
+		));
+		attributeDescriptions.push_back(vk::VertexInputAttributeDescription(
+			1,								// location
+			0,								// binding
+			vk::Format::eR32G32B32Sfloat,	// format
+			offsetof(Vertex, Color)			// offset
+		));
+		attributeDescriptions.push_back(vk::VertexInputAttributeDescription(
+			2,								// location
+			0,								// binding
+			vk::Format::eR32G32Sfloat,		// format
+			offsetof(Vertex, TexCoord)		// offset
+		));
 		return attributeDescriptions;
 	}
 };
@@ -78,10 +87,10 @@ struct UniformBufferObject {
 };
 
 const std::vector<Vertex> vertices = {
-	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-	{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-	{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-	{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}}
+	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+	{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+	{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+	{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 };
 
 const std::vector<uint16_t> indices = {
@@ -143,6 +152,25 @@ private:
 	vk::Buffer CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::DeviceMemory& bufferMemory);
 	void CopyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
 
+	void CreateTextureImage();
+	void DestroyTextureImage();
+	void CreateImage(
+		uint32_t width,
+		uint32_t height,
+		vk::Format format,
+		vk::ImageTiling tiling,
+		vk::ImageUsageFlags usage,
+		vk::MemoryPropertyFlags properties,
+		vk::Image& image,
+		vk::DeviceMemory& imageMemory);
+	vk::ImageView CreateImageView(vk::Image image, vk::Format format);
+	void CreateTextureImageViews();
+	void DestroyTextureImageViews();
+	void TransitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
+	void CopyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height);
+	void CreateTextureSampler();
+	void DestroyTextureSampler();
+
 	void CreateDescriptorSetLayout();
 	void DestroyDescriptorSetLayout();
 	void CreateDescriptorPool();
@@ -153,6 +181,9 @@ private:
 	void DestroyCommandPool();
 	void CreateCommandBuffers();
 	void RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex);
+
+	vk::CommandBuffer BeginSingleTimeCommands();
+	void EndSingleTimeCommands(vk::CommandBuffer commandBuffer);
 
 	void CreateSyncObjects();
 	void DestroySyncObjects();
@@ -195,6 +226,11 @@ private:
 
 	vk::Buffer m_IndexBuffer;
 	vk::DeviceMemory m_IndexBufferMemory;
+
+	vk::Image m_TextureImage;
+	vk::DeviceMemory m_TextureImageMemory;
+	vk::ImageView m_TextureImageView;
+	vk::Sampler m_TextureSampler;
 
 	vk::DescriptorPool m_DescriptorPool;
 	std::vector<vk::DescriptorSet> m_DescriptorSets;

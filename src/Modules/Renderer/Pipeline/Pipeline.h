@@ -4,7 +4,7 @@
 struct Descriptions
 {
 	vk::VertexInputBindingDescription BindingDescription;
-	std::array<vk::VertexInputAttributeDescription, 2> AttributeDescriptions;
+	std::vector<vk::VertexInputAttributeDescription> AttributeDescriptions;
 };
 
 class Pipeline
