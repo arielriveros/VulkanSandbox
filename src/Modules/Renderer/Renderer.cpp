@@ -10,6 +10,7 @@
 Renderer::Renderer(Window* window) : m_Window{ window }
 {
 	std::cout << "Renderer Constructor" << std::endl;
+	Resize(m_Window->Width, m_Window->Height);
 }
 
 Renderer::~Renderer()
@@ -29,6 +30,7 @@ void Renderer::Initialize()
 	CreateRenderPass();
 	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
+	CreateDepthResources();
 	CreateFramebuffers();
 	CreateCommandPool();
 	CreateTextureImage();
@@ -62,6 +64,7 @@ void Renderer::Terminate()
 	DestroyImageViews();
 	DestroyTextureImageViews();
 	DestroyTextureImage();
+	DestroyDepthResources();
 	DestroyTextureSampler();
 	DestroyeDescriptorPool();
 	DestroyDescriptorSetLayout();
@@ -389,7 +392,7 @@ void Renderer::CreateImageViews()
 	m_SwapChainImageViews.resize(m_SwapChainImages.size());
 
 	for (size_t i = 0; i < m_SwapChainImages.size(); i++)
-		m_SwapChainImageViews[i] = CreateImageView(m_SwapChainImages[i], m_SwapChainImageFormat);
+		m_SwapChainImageViews[i] = CreateImageView(m_SwapChainImages[i], m_SwapChainImageFormat, vk::ImageAspectFlagBits::eColor);
 }
 
 void Renderer::DestroyImageViews()
@@ -406,11 +409,13 @@ void Renderer::RecreateSwapChain()
 	WaitIdle();
 
 	DestroyFramebuffers();
+	DestroyDepthResources();
 	DestroyImageViews();
 	DestroySwapChain();
 
 	CreateSwapChain();
 	CreateImageViews();
+	CreateDepthResources();
 	CreateFramebuffers();
 }
 
@@ -441,27 +446,45 @@ void Renderer::CreateRenderPass()
 
 	vk::AttachmentReference colorAttachmentRef(0, vk::ImageLayout::eColorAttachmentOptimal);
 
+	vk::AttachmentDescription depthAttachment(
+		vk::AttachmentDescriptionFlags(),
+		vk::Format::eD32SfloatS8Uint,
+		vk::SampleCountFlagBits::e1,
+		vk::AttachmentLoadOp::eClear,
+		vk::AttachmentStoreOp::eDontCare,
+		vk::AttachmentLoadOp::eDontCare,
+		vk::AttachmentStoreOp::eDontCare,
+		vk::ImageLayout::eUndefined,
+		vk::ImageLayout::eDepthStencilAttachmentOptimal
+	);
+
+	vk::AttachmentReference depthAttachmentRef(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
 	vk::SubpassDescription subpass(
 		vk::SubpassDescriptionFlags(),
 		vk::PipelineBindPoint::eGraphics,
 		0,
 		nullptr,
 		1,
-		&colorAttachmentRef
+		&colorAttachmentRef,
+		nullptr,
+		&depthAttachmentRef
 	);
 
 	vk::SubpassDependency dependency(
 		VK_SUBPASS_EXTERNAL,
 		0,
-		vk::PipelineStageFlagBits::eColorAttachmentOutput,
-		vk::PipelineStageFlagBits::eColorAttachmentOutput,
+		vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests,
+		vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests,
 		vk::AccessFlagBits::eColorAttachmentRead,
-		vk::AccessFlagBits::eColorAttachmentWrite
+		vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite
 	);
+
+	vk::AttachmentDescription attachments[] = { colorAttachment, depthAttachment };
 
 	vk::RenderPassCreateInfo renderPassInfo(
 		vk::RenderPassCreateFlags(),
-		1, &colorAttachment,
+		2, attachments,
 		1, &subpass,
 		1, &dependency
 	);
@@ -480,13 +503,14 @@ void Renderer::CreateFramebuffers()
 	for (size_t i = 0; i < m_SwapChainImageViews.size(); i++)
 	{
 		vk::ImageView attachments[] = {
-			m_SwapChainImageViews[i]
+			m_SwapChainImageViews[i],
+			m_DepthImageView
 		};
 
 		vk::FramebufferCreateInfo framebufferInfo(
 			vk::FramebufferCreateFlags(),
 			m_RenderPass,
-			1, attachments,
+			2, attachments,
 			m_SwapChainExtent.width,
 			m_SwapChainExtent.height,
 			1
@@ -500,6 +524,31 @@ void Renderer::DestroyFramebuffers()
 {
 	for (auto framebuffer : m_SwapChainFramebuffers)
 		m_Device.destroyFramebuffer(framebuffer);
+}
+
+void Renderer::CreateDepthResources()
+{
+	vk::Format depthFormat = vk::Format::eD32SfloatS8Uint;
+
+	CreateImage(
+		m_SwapChainExtent.width,
+		m_SwapChainExtent.height,
+		depthFormat,
+		vk::ImageTiling::eOptimal,
+		vk::ImageUsageFlagBits::eDepthStencilAttachment,
+		vk::MemoryPropertyFlagBits::eDeviceLocal,
+		m_DepthImage,
+		m_DepthImageMemory
+	);
+
+	m_DepthImageView = CreateImageView(m_DepthImage, depthFormat, vk::ImageAspectFlagBits::eDepth);
+}
+
+void Renderer::DestroyDepthResources()
+{
+	m_Device.destroyImageView(m_DepthImageView);
+	m_Device.destroyImage(m_DepthImage);
+	m_Device.freeMemory(m_DepthImageMemory);
 }
 
 void Renderer::CreateVertexBuffer()
@@ -616,8 +665,8 @@ void Renderer::UpdateUniformbuffer(uint32_t currentImage)
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 	UniformBufferObject ubo{};
-	ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	ubo.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	ubo.Projection= glm::perspective(glm::radians(45.0f), m_Width / (float)m_Height, 0.1f, 10.0f);
 
 	ubo.Projection[1][1] *= -1;
@@ -764,7 +813,7 @@ void Renderer::CreateImage(uint32_t width, uint32_t height, vk::Format format, v
 	m_Device.bindImageMemory(image, imageMemory, 0);
 }
 
-vk::ImageView Renderer::CreateImageView(vk::Image image, vk::Format format)
+vk::ImageView Renderer::CreateImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags)
 {
 	vk::ImageViewCreateInfo viewInfo(
 		vk::ImageViewCreateFlags(),
@@ -778,7 +827,7 @@ vk::ImageView Renderer::CreateImageView(vk::Image image, vk::Format format)
 			vk::ComponentSwizzle::eIdentity
 		),
 		vk::ImageSubresourceRange(
-			vk::ImageAspectFlagBits::eColor,
+			aspectFlags,
 			0, 1,
 			0, 1
 		)
@@ -789,7 +838,7 @@ vk::ImageView Renderer::CreateImageView(vk::Image image, vk::Format format)
 
 void Renderer::CreateTextureImageViews()
 {
-	m_TextureImageView = CreateImageView(m_TextureImage, vk::Format::eR8G8B8A8Srgb);
+	m_TextureImageView = CreateImageView(m_TextureImage, vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
 }
 
 void Renderer::DestroyTextureImageViews()
@@ -1064,16 +1113,16 @@ void Renderer::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t ima
 
 	commandBuffer.begin(beginInfo);
 	
-	const vk::ClearValue clearValues[1]{
-		{vk::ClearColorValue(std::array<float, 4>{.05f, 0.f, .05f, 1.f})}
+	const vk::ClearValue clearValues[2]{
+		{vk::ClearColorValue(std::array<float, 4>{.05f, 0.f, .05f, 1.f})},
+		{vk::ClearDepthStencilValue(1.f, 0)}
 	};
 
 	vk::RenderPassBeginInfo renderPassInfo(
 		m_RenderPass,
 		m_SwapChainFramebuffers[imageIndex],
 		vk::Rect2D( vk::Offset2D( 0, 0 ), m_SwapChainExtent ),
-		1,
-		clearValues
+		2, clearValues
 	);
 
 	commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);

@@ -96,17 +96,27 @@ void Pipeline::Create(const std::string &vertexSource, const std::string &fragme
 		vk::PipelineColorBlendStateCreateFlags(),
 		false,
 		vk::LogicOp::eCopy,
-		1,
-		&colorBlendAttachment,
+		1, &colorBlendAttachment,
 		{ 0.0f, 0.0f, 0.0f, 0.0f }
+	);
+
+	vk::PipelineDepthStencilStateCreateInfo depthStencil(
+		vk::PipelineDepthStencilStateCreateFlags(),
+		true,
+		true,
+		vk::CompareOp::eLess,
+		false,
+		false,
+		{},
+		{},
+		0.0f,
+		1.0f
 	);
 
 	vk::PipelineLayoutCreateInfo pipelineLayoutInfo(
 		vk::PipelineLayoutCreateFlags(),
-		1,
-		&m_DescriptorSetLayout,
-		0,
-		nullptr
+		1, &m_DescriptorSetLayout,
+		0, nullptr
 	);
 
 	m_Layout = m_Device.createPipelineLayout(pipelineLayoutInfo);
@@ -121,7 +131,7 @@ void Pipeline::Create(const std::string &vertexSource, const std::string &fragme
 		&viewportState,
 		&rasterizer,
 		&multisampling,
-		nullptr,
+		&depthStencil,
 		&colorBlending,
 		&dynamicState,
 		m_Layout,

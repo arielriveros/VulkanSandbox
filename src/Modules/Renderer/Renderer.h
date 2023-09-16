@@ -1,6 +1,8 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <optional>
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "Pipeline/Pipeline.h"
@@ -86,15 +88,58 @@ struct UniformBufferObject {
 	glm::mat4 Projection;
 };
 
+const glm::vec3 red = 	  {1.0f, 0.0f, 0.0f};
+const glm::vec3 green =   {0.0f, 1.0f, 0.0f};
+const glm::vec3 blue = 	  {0.0f, 0.0f, 1.0f};
+const glm::vec3 cyan = 	  {0.0f, 1.0f, 1.0f};
+const glm::vec3 magenta = {1.0f, 0.0f, 1.0f};
+const glm::vec3 yellow =  {1.0f, 1.0f, 0.0f};
+
 const std::vector<Vertex> vertices = {
-	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-	{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-	{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-	{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
+    // Front face
+    {{-0.5f, -0.5f, 0.5f}, blue, {1.0f, 1.0f}},
+    {{ 0.5f, -0.5f, 0.5f}, blue, {0.0f, 1.0f}},
+    {{ 0.5f,  0.5f, 0.5f}, blue, {0.0f, 0.0f}},
+    {{-0.5f,  0.5f, 0.5f}, blue, {1.0f, 0.0f}},
+
+	// Back face
+	{{ 0.5f, -0.5f, -0.5f}, yellow, {1.0f, 1.0f}},
+	{{-0.5f, -0.5f, -0.5f}, yellow, {0.0f, 1.0f}},
+	{{-0.5f,  0.5f, -0.5f}, yellow, {0.0f, 0.0f}},
+	{{ 0.5f,  0.5f, -0.5f}, yellow, {1.0f, 0.0f}},
+
+	// Left face
+	{{-0.5f, -0.5f, -0.5f}, cyan, {1.0f, 1.0f}},
+	{{-0.5f, -0.5f,  0.5f}, cyan, {0.0f, 1.0f}},
+	{{-0.5f,  0.5f,  0.5f}, cyan, {0.0f, 0.0f}},
+	{{-0.5f,  0.5f, -0.5f}, cyan, {1.0f, 0.0f}},
+
+	// Right face
+	{{0.5f, -0.5f,  0.5f}, red, {1.0f, 1.0f}},
+	{{0.5f, -0.5f, -0.5f}, red, {0.0f, 1.0f}},
+	{{0.5f,  0.5f, -0.5f}, red, {0.0f, 0.0f}},
+	{{0.5f,  0.5f,  0.5f}, red, {1.0f, 0.0f}},
+
+	// Top face
+	{{-0.5f,  0.5f,  0.5f}, green, {0.0f, 1.0f}},
+	{{ 0.5f,  0.5f,  0.5f}, green, {1.0f, 1.0f}},
+	{{ 0.5f,  0.5f, -0.5f}, green, {1.0f, 0.0f}},
+	{{-0.5f,  0.5f, -0.5f}, green, {0.0f, 0.0f}},
+
+	// Bottom face
+	{{ 0.5, -0.5,  0.5}, magenta, {1.0f, 1.0f}},
+	{{-0.5, -0.5,  0.5}, magenta, {0.0f, 1.0f}},
+	{{-0.5, -0.5, -0.5}, magenta, {1.0f, 0.0f}},
+	{{ 0.5, -0.5, -0.5}, magenta, {0.0f, 0.0f}}
 };
 
 const std::vector<uint16_t> indices = {
-	0, 1, 2, 2, 3, 0
+        0, 1, 2, 2, 3, 0,		// Front face
+        4, 5, 6, 6, 7, 4,		// Back face
+        8, 9, 10, 10, 11, 8,	// Left face
+        12, 13, 14, 14, 15, 12,	// Right face
+        16, 17, 18, 18, 19, 16,	// Top face
+        20, 21, 22, 22, 23, 20 	// Bottom face
 };
 
 class Renderer: public IModule
@@ -139,6 +184,9 @@ private:
 	void CreateFramebuffers();
 	void DestroyFramebuffers();
 
+	void CreateDepthResources();
+	void DestroyDepthResources();
+
 	void CreateVertexBuffer();
 	void DestroyVertexBuffer();
 	void CreateIndexBuffer();
@@ -163,7 +211,7 @@ private:
 		vk::MemoryPropertyFlags properties,
 		vk::Image& image,
 		vk::DeviceMemory& imageMemory);
-	vk::ImageView CreateImageView(vk::Image image, vk::Format format);
+	vk::ImageView CreateImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags);
 	void CreateTextureImageViews();
 	void DestroyTextureImageViews();
 	void TransitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
@@ -216,6 +264,10 @@ private:
 	vk::Extent2D m_SwapChainExtent = {0, 0};
 	std::vector<vk::ImageView> m_SwapChainImageViews;
 	std::vector<vk::Framebuffer> m_SwapChainFramebuffers;
+
+	vk::Image m_DepthImage;
+	vk::DeviceMemory m_DepthImageMemory;
+	vk::ImageView m_DepthImageView;
 
 	vk::CommandPool m_CommandPool;
 	std::vector<vk::CommandBuffer> m_CommandBuffers;
