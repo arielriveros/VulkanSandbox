@@ -1,3 +1,4 @@
+#pragma once
 #include <vulkan/vulkan.hpp>
 #include <vector>
 
@@ -15,7 +16,7 @@ public:
 
 	void Create(
 		const std::string& vertexSource, const std::string& fragmentSource, Descriptions descriptions);
-	void Destroy();
+	void Terminate();
     void Bind(vk::CommandBuffer commandBuffer);
 
 	vk::Pipeline GetPipeline() const { return m_Pipeline; }

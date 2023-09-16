@@ -1,38 +1,17 @@
+#pragma once
 #include <vulkan/vulkan.hpp>
 #include <vector>
-#include <optional>
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include "Pipeline/Pipeline.h"
-#include "ValidationLayer/ValidationLayer.h"
+#include "Vulkan/Device.h"
+#include "Vulkan/Pipeline.h"
+#include "Vulkan/ValidationLayer.h"
 #include "../ModuleInterface.h"
 #include "../../Window/Window.h"
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
-
-struct QueueFamilyIndices
-{
-	std::optional<uint32_t> GraphicsFamily;
-	std::optional<uint32_t> PresentFamily;
-
-	bool IsComplete()
-	{
-		return GraphicsFamily.has_value() && PresentFamily.has_value();
-	}
-};
-
-const std::vector<const char*> deviceExtensions = {
-	VK_KHR_SWAPCHAIN_EXTENSION_NAME
-};
-
-struct SwapChainSupportDetails
-{
-	vk::SurfaceCapabilitiesKHR Capabilities;
-	std::vector<vk::SurfaceFormatKHR> Formats;
-	std::vector<vk::PresentModeKHR> PresentModes;
-};
 
 struct Vertex
 {
@@ -155,18 +134,6 @@ public:
 	void Resize(uint32_t width, uint32_t height);
 
 private:
-	void CreateInstance();
-	void DestroyInstance();
-	void SelectPhysicalDevice();
-	QueueFamilyIndices FindQueueFamilies(vk::PhysicalDevice device);
-	bool IsDeviceSuitable(vk::PhysicalDevice device);
-	void CreateDevice();
-	void DestroyDevice();
-	void CreateSurface();
-	void DestroySurface();
-	
-	bool CheckDeviceExtensionSupport(vk::PhysicalDevice device);
-	SwapChainSupportDetails QuerySwapChainSupport(vk::PhysicalDevice device);
 	vk::SurfaceFormatKHR SelectSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats);
 	vk::PresentModeKHR SelectSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes);
 	vk::Extent2D SelectSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities);
@@ -176,8 +143,6 @@ private:
 	void DestroyImageViews();
 	void RecreateSwapChain();
 
-	void CreateGraphicsPipeline();
-	void DestroyGraphicsPipeline();
 	void CreateRenderPass();
 	void DestroyRenderPass();
 
@@ -238,23 +203,14 @@ private:
 
 	void DrawFrame();
 
-	void CreateValidationLayer();
-	void DestroyValidationLayer();
 private:
 	uint32_t m_Width, m_Height;
 	bool m_FramebufferResized = false;
 
 	Window* m_Window;
+	Device* m_Device;
 	Pipeline* m_Pipeline;
 
-	vk::Instance m_Instance;
-	vk::PhysicalDevice m_PhysicalDevice;
-	vk::Device m_Device;
-	vk::Queue m_GraphicsQueue;
-	vk::Queue m_PresentQueue;
-	QueueFamilyIndices m_QueueFamilies;
-
-	VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
 	vk::SwapchainKHR m_SwapChain;
 	vk::RenderPass m_RenderPass;
 	vk::DescriptorSetLayout m_DescriptorSetLayout;
@@ -295,6 +251,4 @@ private:
 	std::vector<vk::Semaphore> m_ImageAvailableSemaphores;
 	std::vector<vk::Semaphore> m_RenderFinishedSemaphores;
 	std::vector<vk::Fence> m_InFlightFences;
-
-	ValidationLayer* m_ValidationLayer;
 };

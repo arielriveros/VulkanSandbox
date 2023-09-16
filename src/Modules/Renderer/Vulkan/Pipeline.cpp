@@ -2,14 +2,9 @@
 #include "Pipeline.h"
 
 Pipeline::Pipeline(vk::Device device, vk::RenderPass renderPass, vk::DescriptorSetLayout descriptorSetLayout)
-	: m_Device(device), m_RenderPass(renderPass), m_DescriptorSetLayout(descriptorSetLayout)
-{
-}
+	: m_Device(device), m_RenderPass(renderPass), m_DescriptorSetLayout(descriptorSetLayout) {}
 
-Pipeline::~Pipeline()
-{
-	Destroy();
-}
+Pipeline::~Pipeline() {}
 
 void Pipeline::Create(const std::string &vertexSource, const std::string &fragmentSource, Descriptions descriptions)
 {
@@ -152,7 +147,7 @@ void Pipeline::Create(const std::string &vertexSource, const std::string &fragme
 	m_Device.destroyShaderModule(fragShaderModule);
 }
 
-void Pipeline::Destroy()
+void Pipeline::Terminate()
 {
 	m_Device.destroyPipeline(m_Pipeline);
 	m_Device.destroyPipelineLayout(m_Layout);
