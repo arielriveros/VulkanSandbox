@@ -35,6 +35,29 @@ void Window::PollEvents()
 	glfwPollEvents();
 }
 
+void Window::UpdateFPSCounter(float updateFrequency)
+{
+	if (!m_FPSCounterEnabled)
+        return;
+
+	static double lastTime = glfwGetTime();
+	static int frameCount = 0;
+
+	double currentTime = glfwGetTime();
+	float delta = static_cast<float>(currentTime - lastTime);
+	frameCount++;
+
+	if (delta < updateFrequency)
+		return;
+
+	float fps = frameCount / delta;
+
+	std::string title = Name + " - FPS: " + std::to_string(fps);
+	glfwSetWindowTitle(m_GLFWwindow, title.c_str());
+	frameCount = 0;
+	lastTime = currentTime;
+}
+
 VkSurfaceKHR Window::CreateSurface(VkInstance instance)
 {
 	VkSurfaceKHR surface;

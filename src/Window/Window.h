@@ -16,10 +16,12 @@ public:
 	void Terminate();
 	bool ShouldClose();
 	void PollEvents();
+	void UpdateFPSCounter(float updateFrequency = 0.5f);
 
 	VkSurfaceKHR CreateSurface(VkInstance instance);
 
 	GLFWwindow* GetWindow() { return m_GLFWwindow; }
+	void SetFPSCounterEnabled(bool enabled) { m_FPSCounterEnabled = enabled; }
 
 	std::string Name;
 	uint32_t Width;
@@ -27,4 +29,5 @@ public:
 
 private:
 	GLFWwindow* m_GLFWwindow;
+	bool m_FPSCounterEnabled = false;
 };
