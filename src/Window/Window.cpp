@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include "Window.h"
 
 Window::Window(std::string name, uint32_t width, uint32_t height)
@@ -32,4 +33,13 @@ bool Window::ShouldClose()
 void Window::PollEvents()
 {
 	glfwPollEvents();
+}
+
+VkSurfaceKHR Window::CreateSurface(VkInstance instance)
+{
+	VkSurfaceKHR surface;
+	if (glfwCreateWindowSurface(instance, m_GLFWwindow, nullptr, &surface) != VK_SUCCESS)
+		throw std::runtime_error("Failed to create window surface");
+
+	return surface;
 }

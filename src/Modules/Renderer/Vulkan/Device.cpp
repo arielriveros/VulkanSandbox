@@ -195,16 +195,12 @@ bool Device::CheckDeviceExtensionSupport(vk::PhysicalDevice device)
 
 void Device::CreateSurface()
 {
-    VkSurfaceKHR surface;
-    if (glfwCreateWindowSurface(m_Instance, m_Window->GetWindow(), nullptr, &surface) != VK_SUCCESS)
-        throw std::runtime_error("Failed to create window surface");
-
-    m_Surface = surface;
+    m_Surface = m_Window->CreateSurface(m_Instance);
 }
 
 void Device::DestroySurface()
 {
-	vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
+	m_Instance.destroySurfaceKHR(m_Surface);
 }
 
 void Device::CreateValidationLayer()

@@ -71,7 +71,7 @@ private:
     vk::Device m_Device;
     vk::Queue m_GraphicsQueue;
     vk::Queue m_PresentQueue;
-    VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
+    vk::SurfaceKHR m_Surface;
     QueueFamilyIndices m_QueueFamilies;
     SwapChainSupportDetails m_SwapChainSupport;
 

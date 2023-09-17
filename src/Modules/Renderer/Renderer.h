@@ -121,6 +121,14 @@ const std::vector<uint16_t> indices = {
         20, 21, 22, 22, 23, 20 	// Bottom face
 };
 
+struct FrameData {
+	vk::Semaphore PresentSemaphore; 
+	vk::Semaphore RenderSemaphore;
+	vk::Fence RenderFence;
+
+	vk::CommandBuffer CommandBuffer;
+};
+
 class Renderer: public IModule
 {
 public:
@@ -211,6 +219,9 @@ private:
 	Device* m_Device;
 	Pipeline* m_Pipeline;
 
+	std::vector<FrameData> m_Frames = std::vector<FrameData>(MAX_FRAMES_IN_FLIGHT);
+	uint32_t m_CurrentFrame = 0;
+
 	vk::SwapchainKHR m_SwapChain;
 	vk::RenderPass m_RenderPass;
 	vk::DescriptorSetLayout m_DescriptorSetLayout;
@@ -226,8 +237,6 @@ private:
 	vk::ImageView m_DepthImageView;
 
 	vk::CommandPool m_CommandPool;
-	std::vector<vk::CommandBuffer> m_CommandBuffers;
-	uint32_t m_CurrentFrame = 0;
 
 	vk::Buffer m_VertexBuffer;
 	vk::DeviceMemory m_VertexBufferMemory;
@@ -246,9 +255,4 @@ private:
 	std::vector<vk::Buffer> m_UniformBuffers;
 	std::vector<vk::DeviceMemory> m_UniformBuffersMemory;
 	std::vector<void*> m_UniformBuffersMapped;
-
-	// Synchronization
-	std::vector<vk::Semaphore> m_ImageAvailableSemaphores;
-	std::vector<vk::Semaphore> m_RenderFinishedSemaphores;
-	std::vector<vk::Fence> m_InFlightFences;
 };

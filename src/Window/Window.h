@@ -17,6 +17,8 @@ public:
 	bool ShouldClose();
 	void PollEvents();
 
+	VkSurfaceKHR CreateSurface(VkInstance instance);
+
 	GLFWwindow* GetWindow() { return m_GLFWwindow; }
 
 	std::string Name;
