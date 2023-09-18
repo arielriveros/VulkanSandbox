@@ -5,6 +5,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "Vulkan/Buffer.h"
 #include "Vulkan/Device.h"
 #include "Vulkan/Pipeline.h"
 #include "Vulkan/ValidationLayer.h"
@@ -168,11 +169,6 @@ private:
 	void DestroyUniformBuffers();
 	void UpdateUniformbuffer(uint32_t currentImage);
 
-	uint32_t FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
-
-	vk::Buffer CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::DeviceMemory& bufferMemory);
-	void CopyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
-
 	void CreateTextureImage();
 	void DestroyTextureImage();
 	void CreateImage(
@@ -198,13 +194,8 @@ private:
 	void DestroyeDescriptorPool();
 	void CreateDescriptorSets();
 
-	void CreateCommandPool();
-	void DestroyCommandPool();
 	void CreateCommandBuffers();
 	void RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex);
-
-	vk::CommandBuffer BeginSingleTimeCommands();
-	void EndSingleTimeCommands(vk::CommandBuffer commandBuffer);
 
 	void CreateSyncObjects();
 	void DestroySyncObjects();
@@ -218,6 +209,9 @@ private:
 	Window* m_Window;
 	Device* m_Device;
 	Pipeline* m_Pipeline;
+	Buffer* m_VertexBuffer;
+	Buffer* m_IndexBuffer;
+	std::vector<Buffer*> m_UniformBuffers;
 
 	std::vector<FrameData> m_Frames = std::vector<FrameData>(MAX_FRAMES_IN_FLIGHT);
 	uint32_t m_CurrentFrame = 0;
@@ -236,14 +230,6 @@ private:
 	vk::DeviceMemory m_DepthImageMemory;
 	vk::ImageView m_DepthImageView;
 
-	vk::CommandPool m_CommandPool;
-
-	vk::Buffer m_VertexBuffer;
-	vk::DeviceMemory m_VertexBufferMemory;
-
-	vk::Buffer m_IndexBuffer;
-	vk::DeviceMemory m_IndexBufferMemory;
-
 	vk::Image m_TextureImage;
 	vk::DeviceMemory m_TextureImageMemory;
 	vk::ImageView m_TextureImageView;
@@ -251,8 +237,4 @@ private:
 
 	vk::DescriptorPool m_DescriptorPool;
 	std::vector<vk::DescriptorSet> m_DescriptorSets;
-
-	std::vector<vk::Buffer> m_UniformBuffers;
-	std::vector<vk::DeviceMemory> m_UniformBuffersMemory;
-	std::vector<void*> m_UniformBuffersMapped;
 };

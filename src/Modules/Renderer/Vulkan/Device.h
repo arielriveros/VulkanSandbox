@@ -44,11 +44,19 @@ public:
     vk::Queue GetPresentQueue() const { return m_PresentQueue; }
     vk::SurfaceKHR GetSurface() const { return m_Surface; }
     QueueFamilyIndices GetQueueFamilies() const { return m_QueueFamilies; }
+    vk::CommandPool GetCommandPool() const { return m_CommandPool; }
 
     void Initialize();
     void Terminate();
     void WaitIdle() { m_Device.waitIdle(); }
     SwapChainSupportDetails QuerySwapChainSupport(vk::PhysicalDevice device);
+
+    vk::CommandBuffer BeginSingleTimeCommands();
+	void EndSingleTimeCommands(vk::CommandBuffer commandBuffer);
+
+    uint32_t FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
+    vk::Buffer CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties, vk::DeviceMemory& bufferMemory);
+    void CopyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
 
 private:
     void CreateDevice();
@@ -61,6 +69,8 @@ private:
     bool CheckDeviceExtensionSupport(vk::PhysicalDevice device);
     void CreateSurface();
     void DestroySurface();
+    void CreateCommandPool();
+    void DestroyCommandPool();
 
     void CreateValidationLayer();
     void DestroyValidationLayer();
@@ -74,6 +84,7 @@ private:
     vk::SurfaceKHR m_Surface;
     QueueFamilyIndices m_QueueFamilies;
     SwapChainSupportDetails m_SwapChainSupport;
+    vk::CommandPool m_CommandPool;
 
     ValidationLayer* m_ValidationLayer;
 };

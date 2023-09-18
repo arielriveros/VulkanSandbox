@@ -154,10 +154,12 @@ void Device::Initialize()
     CreateSurface();
     SelectPhysicalDevice();
     CreateDevice();
+	CreateCommandPool();
 }
 
 void Device::Terminate()
 {
+	DestroyCommandPool();
 	DestroyDevice();
 	DestroySurface();
 	DestroyValidationLayer();
@@ -181,6 +183,58 @@ SwapChainSupportDetails Device::QuerySwapChainSupport(vk::PhysicalDevice device)
 	return details;
 }
 
+uint32_t Device::FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties)
+{
+    vk::PhysicalDeviceMemoryProperties memProperties = m_PhysicalDevice.getMemoryProperties();
+
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+			return i;
+
+	throw std::runtime_error("Failed to find suitable memory type");
+}
+
+vk::Buffer Device::CreateBuffer(
+	vk::DeviceSize size,
+	vk::BufferUsageFlags usage,
+	vk::MemoryPropertyFlags properties,
+	vk::DeviceMemory& bufferMemory)
+{
+	vk::BufferCreateInfo bufferInfo(
+		vk::BufferCreateFlags(),
+		size,
+		usage,
+		vk::SharingMode::eExclusive
+	);
+
+	vk::Buffer buffer = m_Device.createBuffer(bufferInfo);
+
+	vk::MemoryRequirements memRequirements = m_Device.getBufferMemoryRequirements(buffer);
+	vk::MemoryAllocateInfo allocInfo(
+		memRequirements.size,
+		FindMemoryType(memRequirements.memoryTypeBits, properties)
+	);
+
+	vk::Result allocateResult = m_Device.allocateMemory(&allocInfo, nullptr, &bufferMemory);
+	if (allocateResult != vk::Result::eSuccess)
+		throw std::runtime_error("Failed to allocate buffer memory");
+
+	m_Device.bindBufferMemory(buffer, bufferMemory, 0);
+
+	return buffer;
+}
+
+void Device::CopyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size)
+{
+	vk::CommandBuffer commandBuffer = BeginSingleTimeCommands();
+
+	vk::BufferCopy copyRegion(0, 0, size);
+
+	commandBuffer.copyBuffer(srcBuffer, dstBuffer, 1, &copyRegion);
+
+	EndSingleTimeCommands(commandBuffer);
+}
+
 bool Device::CheckDeviceExtensionSupport(vk::PhysicalDevice device)
 {
     std::vector<vk::ExtensionProperties> availableExtensions = device.enumerateDeviceExtensionProperties();
@@ -201,6 +255,63 @@ void Device::CreateSurface()
 void Device::DestroySurface()
 {
 	m_Instance.destroySurfaceKHR(m_Surface);
+}
+
+void Device::CreateCommandPool()
+{
+	vk::CommandPoolCreateInfo poolInfo(
+		vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+		m_QueueFamilies.GraphicsFamily.value()
+	);
+
+	vk::Result result = m_Device.createCommandPool(&poolInfo, nullptr, &m_CommandPool);
+	if (result != vk::Result::eSuccess)
+		throw std::runtime_error("Failed to create command pool");
+}
+
+void Device::DestroyCommandPool()
+{
+	m_Device.destroyCommandPool(m_CommandPool);
+}
+
+vk::CommandBuffer Device::BeginSingleTimeCommands()
+{
+    vk::CommandBufferAllocateInfo allocInfo(
+		m_CommandPool,
+		vk::CommandBufferLevel::ePrimary,
+		1
+	);
+
+	vk::CommandBuffer commandBuffer = m_Device.allocateCommandBuffers(allocInfo).front();
+
+	vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
+	commandBuffer.begin(beginInfo);
+
+	return commandBuffer;
+}
+
+void Device::EndSingleTimeCommands(vk::CommandBuffer commandBuffer)
+{
+	commandBuffer.end();
+
+	vk::SubmitInfo submitInfo(
+		0,
+		nullptr,
+		nullptr,
+		1,
+		&commandBuffer,
+		0,
+		nullptr
+	);
+
+	vk::Result submitResult = m_GraphicsQueue.submit(1, &submitInfo, nullptr);
+	if (submitResult != vk::Result::eSuccess)
+		throw std::runtime_error("Failed to submit single time command buffer");
+
+	m_GraphicsQueue.waitIdle();
+
+	m_Device.freeCommandBuffers(m_CommandPool, 1, &commandBuffer);
 }
 
 void Device::CreateValidationLayer()
