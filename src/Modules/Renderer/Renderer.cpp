@@ -6,11 +6,11 @@
 #include "Renderer.h"
 
 
-Renderer::Renderer(Window* window)
+Renderer::Renderer(Window& window)
 	: m_Window{ window }
 {
 	std::cout << "Renderer Constructor" << std::endl;
-	Resize(m_Window->Width, m_Window->Height);
+	Resize(m_Window.Width, m_Window.Height);
 }
 
 Renderer::~Renderer()
@@ -18,6 +18,7 @@ Renderer::~Renderer()
 	std::cout << "Renderer Destructor" << std::endl;
 	delete m_Pipeline;
 	delete m_Device;
+	delete m_Mesh;
 }
 
 void Renderer::Initialize()
@@ -37,8 +38,8 @@ void Renderer::Initialize()
 		CreateTextureImage();
 		CreateTextureImageViews();
 		CreateTextureSampler();
-		CreateVertexBuffer();
-		CreateIndexBuffer();
+		m_Mesh = new Mesh(*m_Device);
+		m_Mesh->Create(Shape::Cube());
 		CreateUniformBuffers();
 		CreateDescriptorPool();
 		CreateDescriptorSets();
@@ -75,8 +76,7 @@ void Renderer::Terminate()
 	try
 	{
 		DestroySwapChain();
-		DestroyIndexBuffer();
-		DestroyVertexBuffer();
+		m_Mesh->Destroy();
 		DestroyFramebuffers();
 		DestroyImageViews();
 		DestroyTextureImageViews();
@@ -131,7 +131,7 @@ vk::Extent2D Renderer::SelectSwapExtent(const vk::SurfaceCapabilitiesKHR& capabi
 
 	else {
 		int width, height;
-		glfwGetFramebufferSize(m_Window->GetWindow(), &width, &height);
+		glfwGetFramebufferSize(m_Window.GetWindow(), &width, &height);
 
 		vk::Extent2D actualExtent(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 
@@ -352,74 +352,6 @@ void Renderer::DestroyDepthResources()
 	m_Device->GetDevice().destroyImageView(m_DepthImageView);
 	m_Device->GetDevice().destroyImage(m_DepthImage);
 	m_Device->GetDevice().freeMemory(m_DepthImageMemory);
-}
-
-void Renderer::CreateVertexBuffer()
-{
-	vk::DeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
-	
-	Buffer stagingBuffer = Buffer(
-		*m_Device,
-		bufferSize,
-		1,
-		vk::BufferUsageFlagBits::eTransferSrc,
-		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
-	);
-	stagingBuffer.Map();
-	stagingBuffer.WriteToBuffer((void *)vertices.data());
-
-	m_VertexBuffer = new Buffer(
-		*m_Device,
-		bufferSize,
-		1,
-		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
-		vk::MemoryPropertyFlagBits::eDeviceLocal
-	);
-
-	m_Device->CopyBuffer(stagingBuffer.GetBuffer(), m_VertexBuffer->GetBuffer(), bufferSize);
-}
-
-void Renderer::DestroyVertexBuffer()
-{
-	delete m_VertexBuffer;
-}
-
-void Renderer::CreateIndexBuffer()
-{
-	if (indices.size() <= 0)
-		return;
-
-	vk::DeviceSize bufferSize = sizeof(indices[0]) * indices.size();
-
-	Buffer stagingBuffer = Buffer(
-		*m_Device,
-		bufferSize,
-		1,
-		vk::BufferUsageFlagBits::eTransferSrc,
-		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
-	);
-
-	stagingBuffer.Map();
-	stagingBuffer.WriteToBuffer((void *)indices.data());
-
-	m_IndexBuffer = new Buffer(
-		*m_Device,
-		bufferSize,
-		1,
-		vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
-		vk::MemoryPropertyFlagBits::eDeviceLocal
-	);
-	
-
-	m_Device->CopyBuffer(stagingBuffer.GetBuffer(), m_IndexBuffer->GetBuffer(), bufferSize);
-}
-
-void Renderer::DestroyIndexBuffer()
-{
-	if (indices.size() <= 0)
-		return;
-
-	delete m_IndexBuffer;
 }
 
 void Renderer::CreateUniformBuffers()
@@ -846,12 +778,7 @@ void Renderer::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t ima
 	commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 	m_Pipeline->Bind(commandBuffer);
 
-	vk::Buffer vertexBuffers[] = { m_VertexBuffer->GetBuffer() };
-	vk::DeviceSize offsets[] = { 0 };
-	commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
-
-	if (indices.size() > 0)
-		commandBuffer.bindIndexBuffer(m_IndexBuffer->GetBuffer(), 0, vk::IndexType::eUint16);
+	m_Mesh->Bind(commandBuffer);
 
 	vk::Viewport viewport(
 		0.0f,
@@ -868,11 +795,11 @@ void Renderer::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t ima
 
 	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_Pipeline->GetLayout(), 0, 1, &m_DescriptorSets[m_CurrentFrame], 0, nullptr);
 
-	if(indices.size() > 0)
-		commandBuffer.drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+	if(m_Mesh->IsIndexed())
+		commandBuffer.drawIndexed(m_Mesh->GetIndexCount(), 1, 0, 0, 0);
 
 	else
-		commandBuffer.draw(static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+		commandBuffer.draw(m_Mesh->GetVertexSize(), 1, 0, 0);
 
 	commandBuffer.endRenderPass();
 	commandBuffer.end();

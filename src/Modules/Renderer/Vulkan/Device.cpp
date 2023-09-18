@@ -2,7 +2,7 @@
 #include <set>
 #include "Device.h"
 
-Device::Device(Window *window): m_Window(window) {}
+Device::Device(Window& window): m_Window(window) {}
 
 Device::~Device() {}
 
@@ -249,7 +249,7 @@ bool Device::CheckDeviceExtensionSupport(vk::PhysicalDevice device)
 
 void Device::CreateSurface()
 {
-    m_Surface = m_Window->CreateSurface(m_Instance);
+    m_Surface = m_Window.CreateSurface(m_Instance);
 }
 
 void Device::DestroySurface()

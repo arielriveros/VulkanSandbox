@@ -7,6 +7,8 @@ add_executable(${PROJECT_NAME}
 	"Modules/ModuleInterface.h"
 	"Modules/Renderer/Renderer.h"
 	"Modules/Renderer/Renderer.cpp"
+	"Modules/Renderer/Mesh.h"
+	"Modules/Renderer/Mesh.cpp"
 	"Modules/Renderer/Vulkan/Buffer.h"
 	"Modules/Renderer/Vulkan/Buffer.cpp"
 	"Modules/Renderer/Vulkan/Device.h"

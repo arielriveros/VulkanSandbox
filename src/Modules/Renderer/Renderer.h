@@ -9,117 +9,16 @@
 #include "Vulkan/Device.h"
 #include "Vulkan/Pipeline.h"
 #include "Vulkan/ValidationLayer.h"
+#include "Mesh.h"
 #include "../ModuleInterface.h"
 #include "../../Window/Window.h"
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-struct Vertex
-{
-	glm::vec3 Position;
-	glm::vec3 Color;
-	glm::vec2 TexCoord;
-
-	static Descriptions GetDescriptions()
-	{
-		Descriptions descriptions;
-		descriptions.BindingDescription = GetBindingDescription();
-		descriptions.AttributeDescriptions = GetAttributeDescriptions();
-		return descriptions;
-	}
-
-	static vk::VertexInputBindingDescription GetBindingDescription()
-	{
-		return vk::VertexInputBindingDescription(
-			0,								// binding
-			sizeof(Vertex),					// stride
-			vk::VertexInputRate::eVertex	// inputRate
-		);
-	}
-
-	static std::vector<vk::VertexInputAttributeDescription> GetAttributeDescriptions()
-	{
-		std::vector<vk::VertexInputAttributeDescription> attributeDescriptions{};
-		attributeDescriptions.push_back(vk::VertexInputAttributeDescription(
-			0,								// location
-			0,								// binding
-			vk::Format::eR32G32B32Sfloat,	// format
-			offsetof(Vertex, Position)		// offset
-		));
-		attributeDescriptions.push_back(vk::VertexInputAttributeDescription(
-			1,								// location
-			0,								// binding
-			vk::Format::eR32G32B32Sfloat,	// format
-			offsetof(Vertex, Color)			// offset
-		));
-		attributeDescriptions.push_back(vk::VertexInputAttributeDescription(
-			2,								// location
-			0,								// binding
-			vk::Format::eR32G32Sfloat,		// format
-			offsetof(Vertex, TexCoord)		// offset
-		));
-		return attributeDescriptions;
-	}
-};
-
 struct UniformBufferObject {
 	glm::mat4 Model;
 	glm::mat4 View;
 	glm::mat4 Projection;
-};
-
-const glm::vec3 red = 	  {1.0f, 0.0f, 0.0f};
-const glm::vec3 green =   {0.0f, 1.0f, 0.0f};
-const glm::vec3 blue = 	  {0.0f, 0.0f, 1.0f};
-const glm::vec3 cyan = 	  {0.0f, 1.0f, 1.0f};
-const glm::vec3 magenta = {1.0f, 0.0f, 1.0f};
-const glm::vec3 yellow =  {1.0f, 1.0f, 0.0f};
-
-const std::vector<Vertex> vertices = {
-    // Front face
-    {{-0.5f, -0.5f, 0.5f}, blue, {1.0f, 1.0f}},
-    {{ 0.5f, -0.5f, 0.5f}, blue, {0.0f, 1.0f}},
-    {{ 0.5f,  0.5f, 0.5f}, blue, {0.0f, 0.0f}},
-    {{-0.5f,  0.5f, 0.5f}, blue, {1.0f, 0.0f}},
-
-	// Back face
-	{{ 0.5f, -0.5f, -0.5f}, yellow, {1.0f, 1.0f}},
-	{{-0.5f, -0.5f, -0.5f}, yellow, {0.0f, 1.0f}},
-	{{-0.5f,  0.5f, -0.5f}, yellow, {0.0f, 0.0f}},
-	{{ 0.5f,  0.5f, -0.5f}, yellow, {1.0f, 0.0f}},
-
-	// Left face
-	{{-0.5f, -0.5f, -0.5f}, cyan, {1.0f, 1.0f}},
-	{{-0.5f, -0.5f,  0.5f}, cyan, {0.0f, 1.0f}},
-	{{-0.5f,  0.5f,  0.5f}, cyan, {0.0f, 0.0f}},
-	{{-0.5f,  0.5f, -0.5f}, cyan, {1.0f, 0.0f}},
-
-	// Right face
-	{{0.5f, -0.5f,  0.5f}, red, {1.0f, 1.0f}},
-	{{0.5f, -0.5f, -0.5f}, red, {0.0f, 1.0f}},
-	{{0.5f,  0.5f, -0.5f}, red, {0.0f, 0.0f}},
-	{{0.5f,  0.5f,  0.5f}, red, {1.0f, 0.0f}},
-
-	// Top face
-	{{-0.5f,  0.5f,  0.5f}, green, {0.0f, 1.0f}},
-	{{ 0.5f,  0.5f,  0.5f}, green, {1.0f, 1.0f}},
-	{{ 0.5f,  0.5f, -0.5f}, green, {1.0f, 0.0f}},
-	{{-0.5f,  0.5f, -0.5f}, green, {0.0f, 0.0f}},
-
-	// Bottom face
-	{{ 0.5, -0.5,  0.5}, magenta, {1.0f, 1.0f}},
-	{{-0.5, -0.5,  0.5}, magenta, {0.0f, 1.0f}},
-	{{-0.5, -0.5, -0.5}, magenta, {1.0f, 0.0f}},
-	{{ 0.5, -0.5, -0.5}, magenta, {0.0f, 0.0f}}
-};
-
-const std::vector<uint16_t> indices = {
-        0, 1, 2, 2, 3, 0,		// Front face
-        4, 5, 6, 6, 7, 4,		// Back face
-        8, 9, 10, 10, 11, 8,	// Left face
-        12, 13, 14, 14, 15, 12,	// Right face
-        16, 17, 18, 18, 19, 16,	// Top face
-        20, 21, 22, 22, 23, 20 	// Bottom face
 };
 
 struct FrameData {
@@ -133,7 +32,7 @@ struct FrameData {
 class Renderer: public IModule
 {
 public:
-	Renderer(Window* window);
+	Renderer(Window& window);
 	~Renderer();
 
 	void Initialize();
@@ -161,10 +60,6 @@ private:
 	void CreateDepthResources();
 	void DestroyDepthResources();
 
-	void CreateVertexBuffer();
-	void DestroyVertexBuffer();
-	void CreateIndexBuffer();
-	void DestroyIndexBuffer();
 	void CreateUniformBuffers();
 	void DestroyUniformBuffers();
 	void UpdateUniformbuffer(uint32_t currentImage);
@@ -206,25 +101,24 @@ private:
 	uint32_t m_Width, m_Height;
 	bool m_FramebufferResized = false;
 
-	Window* m_Window;
+	Window& m_Window;
+
 	Device* m_Device;
 	Pipeline* m_Pipeline;
-	Buffer* m_VertexBuffer;
-	Buffer* m_IndexBuffer;
+	Mesh* m_Mesh;
 	std::vector<Buffer*> m_UniformBuffers;
 
 	std::vector<FrameData> m_Frames = std::vector<FrameData>(MAX_FRAMES_IN_FLIGHT);
 	uint32_t m_CurrentFrame = 0;
 
 	vk::SwapchainKHR m_SwapChain;
-	vk::RenderPass m_RenderPass;
-	vk::DescriptorSetLayout m_DescriptorSetLayout;
-
 	std::vector<vk::Image> m_SwapChainImages;
-	vk::Format m_SwapChainImageFormat;
-	vk::Extent2D m_SwapChainExtent = {0, 0};
 	std::vector<vk::ImageView> m_SwapChainImageViews;
 	std::vector<vk::Framebuffer> m_SwapChainFramebuffers;
+	vk::Format m_SwapChainImageFormat;
+	vk::Extent2D m_SwapChainExtent = {0, 0};
+	
+	vk::RenderPass m_RenderPass;
 
 	vk::Image m_DepthImage;
 	vk::DeviceMemory m_DepthImageMemory;
@@ -235,6 +129,7 @@ private:
 	vk::ImageView m_TextureImageView;
 	vk::Sampler m_TextureSampler;
 
+	vk::DescriptorSetLayout m_DescriptorSetLayout;
 	vk::DescriptorPool m_DescriptorPool;
 	std::vector<vk::DescriptorSet> m_DescriptorSets;
 };

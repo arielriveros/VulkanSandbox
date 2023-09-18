@@ -29,7 +29,7 @@ const std::vector<const char*> deviceExtensions = {
 class Device
 {
 public:
-    Device(Window* window);
+    Device(Window& window);
     ~Device();
 
     Device(const Device &) = delete;
@@ -75,7 +75,7 @@ private:
     void CreateValidationLayer();
     void DestroyValidationLayer();
 
-    Window* m_Window;
+    Window& m_Window;
     vk::Instance m_Instance;
     vk::PhysicalDevice m_PhysicalDevice;
     vk::Device m_Device;

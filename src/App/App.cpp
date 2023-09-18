@@ -14,7 +14,7 @@ void App::Init()
 {
 	m_Window.Initialize();
 	m_Window.SetFPSCounterEnabled(true);
-	m_Renderer = std::make_unique<Renderer>(&m_Window);
+	m_Renderer = std::make_unique<Renderer>(m_Window);
 	m_Renderer->Initialize();
 	glfwSetWindowUserPointer(m_Window.GetWindow(), this);
 	glfwSetFramebufferSizeCallback(m_Window.GetWindow(), OnResizeCallback);
