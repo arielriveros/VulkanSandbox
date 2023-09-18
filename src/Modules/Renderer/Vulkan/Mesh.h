@@ -1,8 +1,8 @@
 #pragma once
 #include <glm/glm.hpp>
-#include "Vulkan/Buffer.h"
-#include "Vulkan/Device.h"
-#include "Vulkan/Pipeline.h"
+#include "Buffer.h"
+#include "Device.h"
+#include "Pipeline.h"
 
 struct Vertex
 {
@@ -25,15 +25,13 @@ struct Color
 	static const glm::vec3 yellow() { return {1.0f, 1.0f, 0.0f}; }
 };
 
-struct Shape
+struct MeshData
 {
-	const std::vector<Vertex> Vertices;
-	const std::vector<uint16_t> Indices;
+	std::vector<Vertex> Vertices;
+	std::vector<uint16_t> Indices;
 
-	Shape(std::vector<Vertex> vertices, std::vector<uint16_t> indices): Vertices(vertices), Indices(indices) {}
-
-	static Shape Triangle();
-	static Shape Cube();
+	static MeshData Triangle();
+	static MeshData Cube();
 };
 
 class Mesh
@@ -42,7 +40,7 @@ public:
     Mesh(Device& device);
     ~Mesh();
 
-    void Create(Shape shape);
+    void Create(std::vector<Vertex> vertices, std::vector<uint16_t> indices);
     void Destroy();
     void Bind(vk::CommandBuffer commandBuffer);
 	

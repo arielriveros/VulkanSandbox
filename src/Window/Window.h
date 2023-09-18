@@ -22,6 +22,7 @@ public:
 
 	void OnMouseMove(std::function<void(float xPos, float yPos, float xOffset, float yOffset)> callback);
 	bool IsMouseButtonPressed(Mouse::Button button);
+	bool IsMouseButtonReleased(Mouse::Button button);
 	bool IsKeyPressed(Keyboard::Key key);
 
 	VkSurfaceKHR CreateSurface(VkInstance instance);

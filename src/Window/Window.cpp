@@ -103,6 +103,11 @@ bool Window::IsKeyPressed(Keyboard::Key key)
 	return glfwGetKey(m_GLFWwindow, key) == GLFW_PRESS;
 }
 
+bool Window::IsMouseButtonReleased(Mouse::Button button)
+{
+	return glfwGetMouseButton(m_GLFWwindow, button) == GLFW_RELEASE;
+}
+
 void Window::OnResize(GLFWwindow* window, int width, int height)
 {
 	Window* win = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));

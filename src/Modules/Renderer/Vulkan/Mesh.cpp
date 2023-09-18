@@ -41,19 +41,22 @@ std::vector<vk::VertexInputAttributeDescription> Vertex::GetAttributeDescription
 	return attributeDescriptions;
 }
 
-Shape Shape::Triangle()
+MeshData MeshData::Triangle()
 {
-    return Shape({
+	MeshData triangle = {};
+    triangle.Vertices = {
 		{{-0.5f, -0.5f, 0.0f}, Color::red(), {0.0f, 1.0f}},
 		{{0.5f, -0.5f, 0.0f}, Color::green(), {1.0f, 1.0f}},
-		{{0.0f, 0.5f, 0.0f}, Color::blue(), {0.5f, 0.0f}}},
-		{0, 1, 2}
-	);
+		{{0.0f, 0.5f, 0.0f}, Color::blue(), {0.5f, 0.0f}}
+	};
+	triangle.Indices = {0, 1, 2};
+	return triangle;
 }
 
-Shape Shape::Cube()
+MeshData MeshData::Cube()
 {
-    return Shape({
+	MeshData cube = {};
+    cube.Vertices = {
 		// Front face
 		{{-0.5f, -0.5f, 0.5f}, Color::blue(), {1.0f, 1.0f}},
 		{{ 0.5f, -0.5f, 0.5f}, Color::blue(), {0.0f, 1.0f}},
@@ -83,15 +86,17 @@ Shape Shape::Cube()
 		{{ 0.5, -0.5,  0.5}, Color::magenta(), {1.0f, 1.0f}},
 		{{-0.5, -0.5,  0.5}, Color::magenta(), {0.0f, 1.0f}},
 		{{-0.5, -0.5, -0.5}, Color::magenta(), {1.0f, 0.0f}},
-		{{ 0.5, -0.5, -0.5}, Color::magenta(), {0.0f, 0.0f}}},
-		{0, 1, 2, 2, 3, 0,		// Front face
+		{{ 0.5, -0.5, -0.5}, Color::magenta(), {0.0f, 0.0f}}
+	};
+	cube.Indices = {
+		0, 1, 2, 2, 3, 0,		// Front face
 		4, 5, 6, 6, 7, 4,		// Back face
 		8, 9, 10, 10, 11, 8,	// Left face
 		12, 13, 14, 14, 15, 12, // Right face
 		16, 17, 18, 18, 19, 16, // Top face
 		20, 21, 22, 22, 23, 20  // Bottom face
-		}
-	);
+	};
+	return cube;
 }
 
 Mesh::Mesh(Device &device): m_Device(device)
@@ -102,10 +107,10 @@ Mesh::~Mesh()
 {
 }
 
-void Mesh::Create(Shape shape)
+void Mesh::Create(std::vector<Vertex> vertices, std::vector<uint16_t> indices)
 {
-	CreateVertexBuffer(shape.Vertices);
-	CreateIndexBuffer(shape.Indices);
+	CreateVertexBuffer(vertices);
+	CreateIndexBuffer(indices);
 }
 
 void Mesh::Destroy()

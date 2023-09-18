@@ -1,13 +1,12 @@
 #include <iostream>
 #include <array>
-#include <chrono>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include "Renderer.h"
 
 
-Renderer::Renderer(Window& window, Camera& camera)
-	: m_Window{ window }, m_Camera{ camera }
+Renderer::Renderer(Window& window, Camera& camera, Model& model)
+	: m_Window{ window }, m_Camera{ camera }, m_Model{ model }
 {
 	std::cout << "Renderer Constructor" << std::endl;
 	Resize(m_Window.Width, m_Window.Height);
@@ -39,8 +38,7 @@ void Renderer::Initialize()
 		CreateTextureImage();
 		CreateTextureImageViews();
 		CreateTextureSampler();
-		m_Mesh = new Mesh(*m_Device);
-		m_Mesh->Create(Shape::Cube());
+		SetupModels();
 		CreateUniformBuffers();
 		CreateDescriptorPool();
 		CreateDescriptorSets();
@@ -108,7 +106,14 @@ void Renderer::Resize(uint32_t width, uint32_t height)
 	m_Camera.Resize(m_Width, m_Height);
 }
 
-vk::SurfaceFormatKHR Renderer::SelectSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats)
+void Renderer::SetupModels()
+{
+	MeshData meshData = m_Model.GetMeshData();
+	m_Mesh = new Mesh(*m_Device);
+	m_Mesh->Create(meshData.Vertices, meshData.Indices);
+}
+
+vk::SurfaceFormatKHR Renderer::SelectSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats)
 {
 	for (const auto& availableFormat : availableFormats)
 		if (availableFormat.format == vk::Format::eB8G8R8A8Srgb && availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
@@ -385,12 +390,8 @@ void Renderer::DestroyUniformBuffers()
 
 void Renderer::UpdateUniformBuffer(uint32_t currentImage)
 {
-	static auto startTime = std::chrono::high_resolution_clock::now();
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
 	UniformBufferObject ubo{};
-	ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	ubo.Model = m_Model.GetModelMatrix();
 	ubo.ViewProjection = m_Camera.GetProjectionMatrix() * m_Camera.GetViewMatrix();
 
 	m_UniformBuffers[currentImage]->WriteToBuffer(&ubo);

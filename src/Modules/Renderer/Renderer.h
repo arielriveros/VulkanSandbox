@@ -7,10 +7,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "Vulkan/Buffer.h"
 #include "Vulkan/Device.h"
+#include "Vulkan/Mesh.h"
 #include "Vulkan/Pipeline.h"
 #include "Vulkan/ValidationLayer.h"
 #include "Camera.h"
-#include "Mesh.h"
+#include "Model.h"
 #include "../ModuleInterface.h"
 #include "../../Window/Window.h"
 
@@ -32,7 +33,7 @@ struct FrameData {
 class Renderer: public IModule
 {
 public:
-	Renderer(Window& window, Camera& Camera);
+	Renderer(Window& window, Camera& camera, Model& model);
 	~Renderer();
 
 	void Initialize();
@@ -42,6 +43,8 @@ public:
 	void Resize(uint32_t width, uint32_t height);
 
 private:
+	void SetupModels();
+
 	vk::SurfaceFormatKHR SelectSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats);
 	vk::PresentModeKHR SelectSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes);
 	vk::Extent2D SelectSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities);
@@ -103,6 +106,7 @@ private:
 
 	Window& m_Window;
 	Camera& m_Camera;
+	Model& m_Model;
 
 	Device* m_Device;
 	Pipeline* m_Pipeline;

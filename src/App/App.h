@@ -3,6 +3,7 @@
 #include <memory>
 #include "../Window/Window.h"
 #include "../Modules/Renderer/Camera.h"
+#include "../Modules/Renderer/Model.h"
 #include "../Modules/Renderer/Renderer.h"
 
 class App
@@ -21,5 +22,6 @@ private:
 
 	std::unique_ptr<Renderer> m_Renderer;
 	Camera m_Camera;
+	Model m_Model;
 	Window m_Window{ "App", 800, 600 };
 };
