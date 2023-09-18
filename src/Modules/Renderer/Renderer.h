@@ -9,6 +9,7 @@
 #include "Vulkan/Device.h"
 #include "Vulkan/Pipeline.h"
 #include "Vulkan/ValidationLayer.h"
+#include "Camera.h"
 #include "Mesh.h"
 #include "../ModuleInterface.h"
 #include "../../Window/Window.h"
@@ -17,8 +18,7 @@ const int MAX_FRAMES_IN_FLIGHT = 2;
 
 struct UniformBufferObject {
 	glm::mat4 Model;
-	glm::mat4 View;
-	glm::mat4 Projection;
+	glm::mat4 ViewProjection;
 };
 
 struct FrameData {
@@ -32,7 +32,7 @@ struct FrameData {
 class Renderer: public IModule
 {
 public:
-	Renderer(Window& window);
+	Renderer(Window& window, Camera& Camera);
 	~Renderer();
 
 	void Initialize();
@@ -62,7 +62,7 @@ private:
 
 	void CreateUniformBuffers();
 	void DestroyUniformBuffers();
-	void UpdateUniformbuffer(uint32_t currentImage);
+	void UpdateUniformBuffer(uint32_t currentImage);
 
 	void CreateTextureImage();
 	void DestroyTextureImage();
@@ -102,6 +102,7 @@ private:
 	bool m_FramebufferResized = false;
 
 	Window& m_Window;
+	Camera& m_Camera;
 
 	Device* m_Device;
 	Pipeline* m_Pipeline;

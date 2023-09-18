@@ -6,11 +6,12 @@
 #include "Renderer.h"
 
 
-Renderer::Renderer(Window& window)
-	: m_Window{ window }
+Renderer::Renderer(Window& window, Camera& camera)
+	: m_Window{ window }, m_Camera{ camera }
 {
 	std::cout << "Renderer Constructor" << std::endl;
 	Resize(m_Window.Width, m_Window.Height);
+	m_Camera.UpdateRotation();
 }
 
 Renderer::~Renderer()
@@ -104,6 +105,7 @@ void Renderer::Resize(uint32_t width, uint32_t height)
 	m_Width = width;
 	m_Height = height;
 	m_FramebufferResized = true;
+	m_Camera.Resize(m_Width, m_Height);
 }
 
 vk::SurfaceFormatKHR Renderer::SelectSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats)
@@ -381,7 +383,7 @@ void Renderer::DestroyUniformBuffers()
 	}
 }
 
-void Renderer::UpdateUniformbuffer(uint32_t currentImage)
+void Renderer::UpdateUniformBuffer(uint32_t currentImage)
 {
 	static auto startTime = std::chrono::high_resolution_clock::now();
 	auto currentTime = std::chrono::high_resolution_clock::now();
@@ -389,10 +391,7 @@ void Renderer::UpdateUniformbuffer(uint32_t currentImage)
 
 	UniformBufferObject ubo{};
 	ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	ubo.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	ubo.Projection= glm::perspective(glm::radians(45.0f), m_Width / (float)m_Height, 0.1f, 10.0f);
-
-	ubo.Projection[1][1] *= -1;
+	ubo.ViewProjection = m_Camera.GetProjectionMatrix() * m_Camera.GetViewMatrix();
 
 	m_UniformBuffers[currentImage]->WriteToBuffer(&ubo);
 }
@@ -845,7 +844,7 @@ void Renderer::DrawFrame()
 	if (currentBuffer.result != vk::Result::eSuccess)
 		throw std::runtime_error("Failed to acquire swap chain image");
 
-	UpdateUniformbuffer(m_CurrentFrame);
+	UpdateUniformBuffer(m_CurrentFrame);
 
 	while (vk::Result::eTimeout == m_Device->GetDevice().resetFences(1, &m_Frames[m_CurrentFrame].RenderFence));
 	m_Frames[m_CurrentFrame].CommandBuffer.reset(vk::CommandBufferResetFlagBits::eReleaseResources);

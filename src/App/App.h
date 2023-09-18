@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <memory>
 #include "../Window/Window.h"
+#include "../Modules/Renderer/Camera.h"
 #include "../Modules/Renderer/Renderer.h"
 
 class App
@@ -19,5 +20,6 @@ private:
 
 private:
 	std::unique_ptr<Renderer> m_Renderer;
+	Camera m_Camera;
 	Window m_Window{ "App", 800, 600 };
 };
