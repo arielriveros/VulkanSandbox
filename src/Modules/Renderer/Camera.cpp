@@ -10,6 +10,11 @@ Camera::~Camera()
 
 void Camera::UpdateRotation()
 {
+    if (Rotation.x > 89.0f)
+        Rotation.x = 89.0f;
+    if (Rotation.x < -89.0f)
+        Rotation.x = -89.0f;
+
     float pitch = glm::radians(Rotation.x);
     float yaw = glm::radians(Rotation.y);
     float roll = glm::radians(Rotation.z);
@@ -40,4 +45,19 @@ glm::mat4 Camera::GetProjectionMatrix() const
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), m_AspectRatio, m_Near, m_Far);
     projection[1][1] *= -1;
     return projection;
+}
+
+void Camera::MoveForward(float deltaFactor)
+{
+    Position += m_Forward * deltaFactor;
+}
+
+void Camera::MoveRight(float deltaFactor)
+{
+    Position += m_Right * deltaFactor;
+}
+
+void Camera::MoveUp(float deltaFactor)
+{
+    Position += m_Up * deltaFactor;
 }

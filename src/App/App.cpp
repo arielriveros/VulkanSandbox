@@ -15,6 +15,7 @@ void App::Init()
 {
 	m_Window.Initialize();
 	m_Window.SetFPSCounterEnabled(true);
+	m_Window.SetOnResizeCallback(std::bind(&App::OnResize, this, std::placeholders::_1, std::placeholders::_2));
 	m_Camera = Camera();
 	m_Camera.Position.y = 3.0f;
 	m_Camera.Position.z = -3.0f;
@@ -22,8 +23,6 @@ void App::Init()
 
 	m_Renderer = std::make_unique<Renderer>(m_Window, m_Camera);
 	m_Renderer->Initialize();
-	glfwSetWindowUserPointer(m_Window.GetWindow(), this);
-	glfwSetFramebufferSizeCallback(m_Window.GetWindow(), OnResizeCallback);
 }
 
 void App::Run()
@@ -32,12 +31,7 @@ void App::Run()
 	{
 		m_Window.UpdateFPSCounter();
 		m_Window.PollEvents();
-
-		static auto startTime = std::chrono::high_resolution_clock::now();
-		auto currentTime = std::chrono::high_resolution_clock::now();
-		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-		m_Camera.Position.x = sin(time) * 2.0f;
-
+		HandleInput();
 		m_Renderer->Update();
 	}
 
@@ -55,8 +49,43 @@ void App::OnResize(int width, int height)
 	m_Renderer->Resize( static_cast<uint32_t>(width), static_cast<uint32_t>(height) );
 }
 
-void App::OnResizeCallback(GLFWwindow* window, int width, int height)
+void App::HandleInput()
 {
-	App* app = reinterpret_cast<App*>(glfwGetWindowUserPointer(window));
-	app->OnResize(width, height);
+	if (m_Window.IsMouseButtonPressed(Mouse::Button::Left))
+		m_Window.OnMouseMove(std::bind(&App::OnMouseMoveCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+	else
+		m_Window.ResetOffset();
+
+	float delta = 0.001f;
+
+	if (m_Window.IsKeyPressed(Keyboard::Key::LeftShift))
+		delta = 0.005f;
+	else
+		delta = 0.001f;
+
+
+	if (m_Window.IsKeyPressed(Keyboard::Key::W))
+		m_Camera.MoveForward(delta);
+
+	if (m_Window.IsKeyPressed(Keyboard::Key::S))
+		m_Camera.MoveForward(-delta);
+
+	if (m_Window.IsKeyPressed(Keyboard::Key::A))
+		m_Camera.MoveRight(-delta);
+
+	if (m_Window.IsKeyPressed(Keyboard::Key::D))
+		m_Camera.MoveRight(delta);
+
+	if (m_Window.IsKeyPressed(Keyboard::Key::E))
+		m_Camera.Position.y += delta;
+
+	if (m_Window.IsKeyPressed(Keyboard::Key::Q))
+		m_Camera.Position.y -= delta;
+}
+
+void App::OnMouseMoveCallback(float xPos, float yPos, float xOffset, float yOffset)
+{
+	m_Camera.Rotation.y += xOffset;
+	m_Camera.Rotation.x += yOffset;
+	m_Camera.UpdateRotation();
 }

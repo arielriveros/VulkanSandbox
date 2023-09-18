@@ -17,6 +17,8 @@ void Window::Initialize()
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
 	m_GLFWwindow = glfwCreateWindow(Width, Height, Name.c_str(), nullptr, nullptr);
+	glfwSetWindowUserPointer(m_GLFWwindow, this);
+	glfwSetFramebufferSizeCallback(m_GLFWwindow, OnResize);
 }
 
 void Window::Terminate()
@@ -58,6 +60,30 @@ void Window::UpdateFPSCounter(float updateFrequency)
 	lastTime = currentTime;
 }
 
+void Window::OnMouseMove(std::function<void(float xPos, float yPos, float xOffset, float yOffset)> callback)
+{
+	double mouseX, mouseY;
+	glfwGetCursorPos(m_GLFWwindow, &mouseX, &mouseY);
+
+	float xPos = static_cast<float>(mouseX);
+	float yPos = static_cast<float>(mouseY);
+
+	if (m_FirstMouse)
+	{
+		m_LastXPos = xPos;
+		m_LastYPos = yPos;
+		m_FirstMouse = false;
+	}
+
+	float xOffset = xPos - m_LastXPos;
+	float yOffset = m_LastYPos - yPos;
+
+	callback(xPos, yPos, xOffset, yOffset);
+
+	m_LastXPos = xPos;
+	m_LastYPos = yPos;
+}
+
 VkSurfaceKHR Window::CreateSurface(VkInstance instance)
 {
 	VkSurfaceKHR surface;
@@ -65,4 +91,22 @@ VkSurfaceKHR Window::CreateSurface(VkInstance instance)
 		throw std::runtime_error("Failed to create window surface");
 
 	return surface;
+}
+
+bool Window::IsMouseButtonPressed(Mouse::Button button)
+{
+	return glfwGetMouseButton(m_GLFWwindow, button) == GLFW_PRESS;
+}
+
+bool Window::IsKeyPressed(Keyboard::Key key)
+{
+	return glfwGetKey(m_GLFWwindow, key) == GLFW_PRESS;
+}
+
+void Window::OnResize(GLFWwindow* window, int width, int height)
+{
+	Window* win = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+	win->Width = width;
+	win->Height = height;
+	win->m_OnResizeCallback(width, height);
 }

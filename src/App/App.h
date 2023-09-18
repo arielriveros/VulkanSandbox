@@ -16,9 +16,9 @@ public:
 	void OnResize(int width, int height);
 
 private:
-	static void OnResizeCallback(GLFWwindow* window, int width, int height);
+	void HandleInput();
+	void OnMouseMoveCallback(float xPos, float yPos, float xOffset, float yOffset);
 
-private:
 	std::unique_ptr<Renderer> m_Renderer;
 	Camera m_Camera;
 	Window m_Window{ "App", 800, 600 };

@@ -17,7 +17,10 @@ public:
 
     glm::vec3 Position = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 Rotation = glm::vec3(0.0f, 90.0f, 0.0f);
-    
+
+    void MoveForward(float deltaFactor);
+    void MoveRight(float deltaFactor);
+    void MoveUp(float deltaFactor);    
 
 private:
     float m_Near = 0.1f;
