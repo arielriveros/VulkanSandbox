@@ -29,7 +29,7 @@ public:
 
 	GLFWwindow* GetWindow() { return m_GLFWwindow; }
 	void SetFPSCounterEnabled(bool enabled) { m_FPSCounterEnabled = enabled; }
-	void SetOnResizeCallback(std::function<void(float width, float height)> callback) { m_OnResizeCallback = callback; }
+	void SetOnResizeCallback(std::function<void(int width, int height)> callback) { m_OnResizeCallback = callback; }
 	void SetCursorEnabled(bool enabled) { glfwSetInputMode(m_GLFWwindow, GLFW_CURSOR, enabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED); }
 	void ResetOffset() { m_FirstMouse = true; }
 
@@ -41,7 +41,7 @@ private:
 	static void OnResize(GLFWwindow* window, int width, int height);
 
 	GLFWwindow* m_GLFWwindow;
-	std::function<void(float width, float height)> m_OnResizeCallback;
+	std::function<void(int width, int height)> m_OnResizeCallback;
 	bool m_FPSCounterEnabled = false;
 	float m_LastXPos = 0.0f;
 	float m_LastYPos = 0.0f;
