@@ -1,6 +1,8 @@
 #pragma once
 #include <vulkan/vulkan.hpp>
 #include <vector>
+#include <unordered_map>
+#include <string>
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
@@ -19,8 +21,11 @@
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
 struct UniformBufferObject {
-	glm::mat4 Model;
 	glm::mat4 ViewProjection;
+};
+
+struct PushConstantData {
+	glm::mat4 Model;
 };
 
 struct FrameData {
@@ -34,7 +39,7 @@ struct FrameData {
 class Renderer: public IModule
 {
 public:
-	Renderer(Window& window, Camera& camera, Model& model);
+	Renderer(Window& window, Camera& camera, std::vector<Model*> models);
 	~Renderer();
 
 	void Initialize();
@@ -44,7 +49,8 @@ public:
 	void Resize(uint32_t width, uint32_t height);
 
 private:
-	void SetupModels();
+	void SetupMeshes();
+	void DestroyMeshes();
 	void RecreateSwapChain();
 
 	void CreateUniformBuffers();
@@ -80,13 +86,13 @@ private:
 
 	Window& m_Window;
 	Camera& m_Camera;
-	Model& m_Model;
+	std::vector<Model*> m_Models;
 
 	Device* m_Device;
 	Pipeline* m_Pipeline;
 	SwapChain* m_SwapChain;
 
-	Mesh* m_Mesh;
+	std::unordered_map<std::string, Mesh*> m_Meshes;
 	std::vector<Buffer*> m_UniformBuffers;
 
 	std::vector<FrameData> m_Frames = std::vector<FrameData>(MAX_FRAMES_IN_FLIGHT);

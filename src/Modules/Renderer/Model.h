@@ -3,12 +3,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "Vulkan/Mesh.h"
+#include <string>
 
 class Model
 {
 public:
     Model() = default;
-    Model(const MeshData& meshData);
+    Model(std::string name, const MeshData& meshData);
     ~Model();
 
     glm::vec3 Position = glm::vec3(0.0f);
@@ -17,7 +18,9 @@ public:
 
     glm::mat4 GetModelMatrix() const;
     MeshData GetMeshData() const { return m_MeshData; }
+    std::string GetName() const { return m_Name; }
 
 private:
+    std::string m_Name;
     MeshData m_MeshData;
 };

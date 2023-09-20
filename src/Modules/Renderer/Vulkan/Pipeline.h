@@ -11,11 +11,15 @@ struct Descriptions
 class Pipeline
 {
 public:
-	Pipeline(vk::Device device, vk::RenderPass renderPass, vk::DescriptorSetLayout descriptorSetLayout);
+	Pipeline(vk::Device device, vk::RenderPass renderPass);
 	~Pipeline();
 
 	void Create(
-		const std::string& vertexSource, const std::string& fragmentSource, Descriptions descriptions);
+		const std::string& vertexSource,
+		const std::string& fragmentSource,
+		Descriptions descriptions,
+		vk::DescriptorSetLayout descriptorSetLayout,
+		uint32_t );
 	void Terminate();
     void Bind(vk::CommandBuffer commandBuffer);
 
@@ -31,5 +35,4 @@ private:
 	vk::Pipeline m_Pipeline;
 	vk::PipelineLayout m_Layout;
 	vk::RenderPass m_RenderPass;
-	vk::DescriptorSetLayout m_DescriptorSetLayout;
 };

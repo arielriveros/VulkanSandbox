@@ -1,6 +1,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <memory>
+#include <vector>
 #include "../Window/Window.h"
 #include "../Modules/Renderer/Camera.h"
 #include "../Modules/Renderer/Model.h"
@@ -22,6 +23,6 @@ private:
 
 	std::unique_ptr<Renderer> m_Renderer;
 	Camera m_Camera;
-	Model m_Model;
+	std::vector<Model*> m_Models;
 	Window m_Window{ "App", 800, 600 };
 };

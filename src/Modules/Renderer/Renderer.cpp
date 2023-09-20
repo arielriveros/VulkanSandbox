@@ -5,8 +5,8 @@
 #include "Renderer.h"
 
 
-Renderer::Renderer(Window& window, Camera& camera, Model& model)
-	: m_Window{ window }, m_Camera{ camera }, m_Model{ model }
+Renderer::Renderer(Window& window, Camera& camera, std::vector<Model*> models)
+	: m_Window{ window }, m_Camera{ camera }, m_Models{ models }
 {
 	std::cout << "Renderer Constructor" << std::endl;
 	Resize(m_Window.Width, m_Window.Height);
@@ -16,9 +16,10 @@ Renderer::Renderer(Window& window, Camera& camera, Model& model)
 Renderer::~Renderer()
 {
 	std::cout << "Renderer Destructor" << std::endl;
+	
+	delete m_SwapChain;
 	delete m_Pipeline;
 	delete m_Device;
-	delete m_Mesh;
 }
 
 void Renderer::Initialize()
@@ -30,12 +31,17 @@ void Renderer::Initialize()
 		m_SwapChain = new SwapChain(*m_Device, m_Window);
 		m_SwapChain->Initialize();
 		CreateDescriptorSetLayout();
-		m_Pipeline = new Pipeline(m_Device->GetDevice(), m_SwapChain->GetRenderPass(), m_DescriptorSetLayout);
-		m_Pipeline->Create("resources/shaders/default.vert.spv", "resources/shaders/default.frag.spv", Vertex::GetDescriptions());
+		m_Pipeline = new Pipeline(m_Device->GetDevice(), m_SwapChain->GetRenderPass());
+		m_Pipeline->Create(
+			"resources/shaders/default.vert.spv",
+			"resources/shaders/default.frag.spv",
+			Vertex::GetDescriptions(),
+			m_DescriptorSetLayout,
+			sizeof(PushConstantData));
 		CreateTextureImage();
 		CreateTextureImageViews();
 		CreateTextureSampler();
-		SetupModels();
+		SetupMeshes();
 		CreateUniformBuffers();
 		CreateDescriptorPool();
 		CreateDescriptorSets();
@@ -71,7 +77,7 @@ void Renderer::Terminate()
 {
 	try
 	{
-		m_Mesh->Destroy();
+		DestroyMeshes();
 		DestroyTextureImageViews();
 		DestroyTextureImage();
 		DestroyTextureSampler();
@@ -99,13 +105,25 @@ void Renderer::Resize(uint32_t width, uint32_t height)
 	m_Camera.Resize(m_Width, m_Height);
 }
 
-void Renderer::SetupModels()
+void Renderer::SetupMeshes()
 {
-	MeshData meshData = m_Model.GetMeshData();
-	m_Mesh = new Mesh(*m_Device);
-	m_Mesh->Create(meshData.Vertices, meshData.Indices);
+	for (Model* model : m_Models)
+	{
+		MeshData meshData = model->GetMeshData();
+		Mesh* mesh = new Mesh(*m_Device);
+		mesh->Create(meshData.Vertices, meshData.Indices);
+		m_Meshes.insert({ model->GetName(), mesh });
+	}
 }
 
+void Renderer::DestroyMeshes()
+{
+	for (std::pair<std::string, Mesh*> mesh : m_Meshes)
+	{
+		mesh.second->Destroy();
+		delete mesh.second;
+	}
+}
 
 void Renderer::RecreateSwapChain()
 {
@@ -146,7 +164,6 @@ void Renderer::DestroyUniformBuffers()
 void Renderer::UpdateUniformBuffer(uint32_t currentImage)
 {
 	UniformBufferObject ubo{};
-	ubo.Model = m_Model.GetModelMatrix();
 	ubo.ViewProjection = m_Camera.GetProjectionMatrix() * m_Camera.GetViewMatrix();
 
 	m_UniformBuffers[currentImage]->WriteToBuffer(&ubo);
@@ -474,9 +491,6 @@ void Renderer::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t ima
 	);
 
 	commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-	m_Pipeline->Bind(commandBuffer);
-
-	m_Mesh->Bind(commandBuffer);
 
 	vk::Viewport viewport(
 		0.0f,
@@ -491,13 +505,24 @@ void Renderer::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t ima
 	vk::Rect2D scissor(vk::Offset2D(0, 0), m_SwapChain->GetExtent());
 	commandBuffer.setScissor(0, 1, &scissor);
 
+	m_Pipeline->Bind(commandBuffer);
 	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_Pipeline->GetLayout(), 0, 1, &m_DescriptorSets[m_CurrentFrame], 0, nullptr);
 
-	if(m_Mesh->IsIndexed())
-		commandBuffer.drawIndexed(m_Mesh->GetIndexCount(), 1, 0, 0, 0);
+	for (uint32_t i = 0; i < m_Models.size(); i++)
+	{
+		Mesh* mesh = m_Meshes[m_Models[i]->GetName()];
+		
+		PushConstantData pushConstantData{};
+		pushConstantData.Model = m_Models[i]->GetModelMatrix();
+		commandBuffer.pushConstants(m_Pipeline->GetLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstantData), &pushConstantData);
 
-	else
-		commandBuffer.draw(m_Mesh->GetVertexSize(), 1, 0, 0);
+		mesh->Bind(commandBuffer);
+		if(mesh->IsIndexed())
+			commandBuffer.drawIndexed(mesh->GetIndexCount(), 1, 0, 0, 0);
+
+		else
+			commandBuffer.draw(mesh->GetVertexSize(), 1, 0, 0);
+	}
 
 	commandBuffer.endRenderPass();
 	commandBuffer.end();

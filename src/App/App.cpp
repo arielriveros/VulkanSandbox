@@ -21,9 +21,14 @@ void App::Init()
 	m_Camera.Position.z = 3.0f;
 	m_Camera.Rotation.x = -45.0f;
 
-	m_Model = Model(MeshData::Cube());
+	Model* cube1 = new Model("cube1", MeshData::Cube());
+	m_Models.push_back(cube1);
+	Model* cube2 = new Model("cube2", MeshData::Cube());
+	cube2->Position.x = -1.0f;
+	cube2->Position.z = -1.0f;
+	m_Models.push_back(cube2);
 
-	m_Renderer = std::make_unique<Renderer>(m_Window, m_Camera, m_Model);
+	m_Renderer = std::make_unique<Renderer>(m_Window, m_Camera, m_Models);
 	m_Renderer->Initialize();
 }
 
@@ -42,6 +47,8 @@ void App::Run()
 
 void App::Exit()
 {
+	for (auto& model : m_Models)
+		delete model;
 	m_Renderer->Terminate();
 	m_Window.Terminate();
 }
@@ -85,16 +92,16 @@ void App::HandleInput()
 		m_Camera.Position.y -= delta;
 
 	if (m_Window.IsKeyPressed(Keyboard::Key::Home))
-		m_Model.Position.z -= delta;
+		m_Models[0]->Position.z -= delta;
 
 	if (m_Window.IsKeyPressed(Keyboard::Key::End))
-		m_Model.Position.z += delta;
+		m_Models[0]->Position.z += delta;
 
 	if (m_Window.IsKeyPressed(Keyboard::Key::Delete))
-		m_Model.Position.x -= delta;
+		m_Models[0]->Position.x -= delta;
 
 	if (m_Window.IsKeyPressed(Keyboard::Key::PageDown))
-		m_Model.Position.x += delta;
+		m_Models[0]->Position.x += delta;
 }
 
 void App::OnMouseMoveCallback(float xPos, float yPos, float xOffset, float yOffset)
@@ -108,7 +115,7 @@ void App::OnMouseMoveCallback(float xPos, float yPos, float xOffset, float yOffs
 
 	if (m_Window.IsMouseButtonPressed(Mouse::Button::Left))
 	{
-		m_Model.Rotation.y += xOffset;
-		m_Model.Rotation.x -= yOffset;
+		m_Models[0]->Rotation.y += xOffset;
+		m_Models[0]->Rotation.x -= yOffset;
 	}
 }

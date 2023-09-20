@@ -1,12 +1,18 @@
 #include <fstream>
 #include "Pipeline.h"
 
-Pipeline::Pipeline(vk::Device device, vk::RenderPass renderPass, vk::DescriptorSetLayout descriptorSetLayout)
-	: m_Device(device), m_RenderPass(renderPass), m_DescriptorSetLayout(descriptorSetLayout) {}
+Pipeline::Pipeline(vk::Device device, vk::RenderPass renderPass)
+	: m_Device(device), m_RenderPass(renderPass){}
 
 Pipeline::~Pipeline() {}
 
-void Pipeline::Create(const std::string &vertexSource, const std::string &fragmentSource, Descriptions descriptions)
+void Pipeline::Create(
+	const std::string &vertexSource,
+	const std::string &fragmentSource,
+	Descriptions descriptions,
+	vk::DescriptorSetLayout descriptorSetLayout,
+	uint32_t pushConstantRangeSize
+	)
 {
 	auto vertShaderCode = ReadFile(vertexSource);
 	auto fragShaderCode = ReadFile(fragmentSource);
@@ -108,10 +114,16 @@ void Pipeline::Create(const std::string &vertexSource, const std::string &fragme
 		1.0f
 	);
 
+	vk::PushConstantRange pushConstantRange(
+		vk::ShaderStageFlagBits::eVertex,
+		0,
+		pushConstantRangeSize
+	);
+
 	vk::PipelineLayoutCreateInfo pipelineLayoutInfo(
 		vk::PipelineLayoutCreateFlags(),
-		1, &m_DescriptorSetLayout,
-		0, nullptr
+		1, &descriptorSetLayout,
+		1, &pushConstantRange
 	);
 
 	m_Layout = m_Device.createPipelineLayout(pipelineLayoutInfo);

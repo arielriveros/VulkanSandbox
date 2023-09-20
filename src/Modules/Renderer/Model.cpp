@@ -1,6 +1,6 @@
 #include "Model.h"
 
-Model::Model(const MeshData& meshData) : m_MeshData(meshData)
+Model::Model(std::string name, const MeshData& meshData) : m_Name(name), m_MeshData(meshData)
 {
 }
 

@@ -1,7 +1,10 @@
 #version 450
 
-layout(binding = 0) uniform UniformBufferObject {
+layout(push_constant) uniform PushConstant {
     mat4 model;
+} pc;
+
+layout(binding = 0) uniform UniformBufferObject {
     mat4 viewProjection;
 } ubo;
 
@@ -13,7 +16,7 @@ layout(location = 0) out vec3 FragColor;
 layout(location = 1) out vec2 FragTexCoord;
 
 void main() {
-    gl_Position = ubo.viewProjection * ubo.model * vec4(inPosition, 1.0);
+    gl_Position = ubo.viewProjection * pc.model * vec4(inPosition, 1.0);
     FragColor = inColor;
     FragTexCoord = inTexCoord;
 }
