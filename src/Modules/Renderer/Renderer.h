@@ -9,6 +9,7 @@
 #include "Vulkan/Device.h"
 #include "Vulkan/Mesh.h"
 #include "Vulkan/Pipeline.h"
+#include "Vulkan/SwapChain.h"
 #include "Vulkan/ValidationLayer.h"
 #include "Camera.h"
 #include "Model.h"
@@ -44,24 +45,7 @@ public:
 
 private:
 	void SetupModels();
-
-	vk::SurfaceFormatKHR SelectSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats);
-	vk::PresentModeKHR SelectSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes);
-	vk::Extent2D SelectSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities);
-	void CreateSwapChain();
-	void DestroySwapChain();
-	void CreateImageViews();
-	void DestroyImageViews();
 	void RecreateSwapChain();
-
-	void CreateRenderPass();
-	void DestroyRenderPass();
-
-	void CreateFramebuffers();
-	void DestroyFramebuffers();
-
-	void CreateDepthResources();
-	void DestroyDepthResources();
 
 	void CreateUniformBuffers();
 	void DestroyUniformBuffers();
@@ -69,16 +53,6 @@ private:
 
 	void CreateTextureImage();
 	void DestroyTextureImage();
-	void CreateImage(
-		uint32_t width,
-		uint32_t height,
-		vk::Format format,
-		vk::ImageTiling tiling,
-		vk::ImageUsageFlags usage,
-		vk::MemoryPropertyFlags properties,
-		vk::Image& image,
-		vk::DeviceMemory& imageMemory);
-	vk::ImageView CreateImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags);
 	void CreateTextureImageViews();
 	void DestroyTextureImageViews();
 	void TransitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
@@ -110,24 +84,13 @@ private:
 
 	Device* m_Device;
 	Pipeline* m_Pipeline;
+	SwapChain* m_SwapChain;
+
 	Mesh* m_Mesh;
 	std::vector<Buffer*> m_UniformBuffers;
 
 	std::vector<FrameData> m_Frames = std::vector<FrameData>(MAX_FRAMES_IN_FLIGHT);
 	uint32_t m_CurrentFrame = 0;
-
-	vk::SwapchainKHR m_SwapChain;
-	std::vector<vk::Image> m_SwapChainImages;
-	std::vector<vk::ImageView> m_SwapChainImageViews;
-	std::vector<vk::Framebuffer> m_SwapChainFramebuffers;
-	vk::Format m_SwapChainImageFormat;
-	vk::Extent2D m_SwapChainExtent = {0, 0};
-	
-	vk::RenderPass m_RenderPass;
-
-	vk::Image m_DepthImage;
-	vk::DeviceMemory m_DepthImageMemory;
-	vk::ImageView m_DepthImageView;
 
 	vk::Image m_TextureImage;
 	vk::DeviceMemory m_TextureImageMemory;

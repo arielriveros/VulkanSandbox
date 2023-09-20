@@ -235,6 +235,64 @@ void Device::CopyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSi
 	EndSingleTimeCommands(commandBuffer);
 }
 
+vk::Image Device::CreateImage(uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties, vk::DeviceMemory &imageMemory)
+{
+    vk::ImageCreateInfo imageInfo(
+		vk::ImageCreateFlags(),
+		vk::ImageType::e2D,
+		format,
+		vk::Extent3D(width, height, 1),
+		1,
+		1,
+		vk::SampleCountFlagBits::e1,
+		tiling,
+		usage,
+		vk::SharingMode::eExclusive,
+		0,
+		nullptr,
+		vk::ImageLayout::eUndefined
+	);
+
+	vk::Image image = m_Device.createImage(imageInfo);
+
+	vk::MemoryRequirements memRequirements = m_Device.getImageMemoryRequirements(image);
+	vk::MemoryAllocateInfo allocInfo(
+		memRequirements.size,
+		FindMemoryType(memRequirements.memoryTypeBits, properties)
+	);
+
+	vk::Result allocateResult = m_Device.allocateMemory(&allocInfo, nullptr, &imageMemory);
+	if (allocateResult != vk::Result::eSuccess)
+		throw std::runtime_error("Failed to allocate image memory");
+
+	m_Device.bindImageMemory(image, imageMemory, 0);
+
+	return image;
+}
+
+vk::ImageView Device::CreateImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags)
+{
+    vk::ImageViewCreateInfo viewInfo(
+		vk::ImageViewCreateFlags(),
+		image,
+		vk::ImageViewType::e2D,
+		format,
+		vk::ComponentMapping(
+			vk::ComponentSwizzle::eIdentity,
+			vk::ComponentSwizzle::eIdentity,
+			vk::ComponentSwizzle::eIdentity,
+			vk::ComponentSwizzle::eIdentity
+		),
+		vk::ImageSubresourceRange(
+			aspectFlags,
+			0, 1,
+			0, 1
+		)
+	);
+
+	return m_Device.createImageView(viewInfo);
+}
+
 bool Device::CheckDeviceExtensionSupport(vk::PhysicalDevice device)
 {
     std::vector<vk::ExtensionProperties> availableExtensions = device.enumerateDeviceExtensionProperties();
