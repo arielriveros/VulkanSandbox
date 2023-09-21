@@ -64,12 +64,9 @@ private:
 
 	void RecreateSwapChain();
 
-	void SetupGlobalUBO();
-	void DestroyGlobalUBO();
+	void SetupDescriptors();
+	void DestroyDescriptors();
 	void UpdateGlobalUBO(uint32_t currentImage);
-
-	void CreateTextureSampler();
-	void DestroyTextureSampler();
 
 	void CreateCommandBuffers();
 	void RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex);
@@ -97,7 +94,6 @@ private:
 	uint32_t m_CurrentFrame = 0;
 
 	std::unique_ptr<Texture> m_Texture{};
-	vk::Sampler m_TextureSampler;
 
 	std::unique_ptr<DescriptorPool> m_GlobalDescriptorPool{};
 	std::unique_ptr<DescriptorSetLayout> m_GlobalDescriptorSetLayout{};

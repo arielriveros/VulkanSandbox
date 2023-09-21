@@ -19,12 +19,13 @@ public:
 		const std::string& fragmentSource,
 		VertexDescriptions descriptions,
 		vk::DescriptorSetLayout descriptorSetLayout,
-		uint32_t );
+		uint32_t pushConstantRangeSize);
 	void Terminate();
     void Bind(vk::CommandBuffer commandBuffer);
 
 	vk::Pipeline GetPipeline() const { return m_Pipeline; }
 	vk::PipelineLayout GetLayout() const { return m_Layout; }
+	vk::DescriptorSetLayout GetDescriptorSetLayout() const { return m_DescriptorSetLayout; }
 
 private:
 	std::vector<char> ReadFile(const std::string& filename);
@@ -35,4 +36,5 @@ private:
 	vk::Pipeline m_Pipeline;
 	vk::PipelineLayout m_Layout;
 	vk::RenderPass m_RenderPass;
+	vk::DescriptorSetLayout m_DescriptorSetLayout;
 };

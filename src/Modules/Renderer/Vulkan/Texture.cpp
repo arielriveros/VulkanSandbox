@@ -5,6 +5,7 @@
 Texture::Texture(Device &device)
     : m_Device(device)
 {
+	CreateSampler();
 }
 
 Texture::~Texture()
@@ -26,6 +27,14 @@ void Texture::LoadFromFile(const std::string &filename)
     if (!pixels)
         throw std::runtime_error("Failed to load texture image");
 
+	LoadFromBuffer({ pixels }, textureWidth, textureHeight);
+	stbi_image_free(pixels);
+}
+
+void Texture::LoadFromBuffer(const std::vector<void*> &buffer, uint32_t width, uint32_t height)
+{
+	vk::DeviceSize imageSize = width * height * 4;
+
 	vk::DeviceMemory stagingBufferMemory;
 	vk::Buffer stagingBuffer = m_Device.CreateBuffer(
 		imageSize,
@@ -35,14 +44,12 @@ void Texture::LoadFromFile(const std::string &filename)
 	);
 
 	void* data = m_Device.GetDevice().mapMemory(stagingBufferMemory, 0, imageSize, vk::MemoryMapFlags());
-	memcpy(data, pixels, static_cast<size_t>(imageSize));
+	memcpy(data, buffer[0], static_cast<size_t>(imageSize));
 	m_Device.GetDevice().unmapMemory(stagingBufferMemory);
 
-	stbi_image_free(pixels);
-	
 	m_Image = m_Device.CreateImage(
-		textureWidth,
-		textureHeight,
+		width,
+		height,
 		vk::Format::eR8G8B8A8Srgb,
 		vk::ImageTiling::eOptimal,
 		vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
@@ -51,13 +58,13 @@ void Texture::LoadFromFile(const std::string &filename)
 	);
 
 	TransitionImageLayout(m_Image, vk::Format::eR8G8B8A8Srgb, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
-	m_Device.CopyBufferToImage(stagingBuffer, m_Image, static_cast<uint32_t>(textureWidth), static_cast<uint32_t>(textureHeight));
+	m_Device.CopyBufferToImage(stagingBuffer, m_Image, width, height);
 	TransitionImageLayout(m_Image, vk::Format::eR8G8B8A8Srgb, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 
 	m_Device.GetDevice().destroyBuffer(stagingBuffer);
 	m_Device.GetDevice().freeMemory(stagingBufferMemory);
 
-    m_ImageView = m_Device.CreateImageView(m_Image, vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
+	m_ImageView = m_Device.CreateImageView(m_Image, vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
 }
 
 void Texture::Destroy()
@@ -65,12 +72,13 @@ void Texture::Destroy()
     m_Device.GetDevice().destroyImageView(m_ImageView);
     m_Device.GetDevice().destroyImage(m_Image);
 	m_Device.GetDevice().freeMemory(m_ImageMemory);
+	m_Device.GetDevice().destroySampler(m_Sampler);
 }
 
-vk::DescriptorImageInfo Texture::DescriptorInfo(vk::Sampler sampler)
+vk::DescriptorImageInfo Texture::DescriptorInfo()
 {
     return vk::DescriptorImageInfo(
-        sampler,
+        m_Sampler,
         m_ImageView,
         vk::ImageLayout::eShaderReadOnlyOptimal
     );
@@ -129,4 +137,35 @@ void Texture::TransitionImageLayout(vk::Image image, vk::Format format, vk::Imag
 	);
 
 	m_Device.EndSingleTimeCommands(commandBuffer);
+}
+
+void Texture::CreateSampler()
+{
+	vk::SamplerCreateInfo samplerInfo(
+		vk::SamplerCreateFlags(),
+		vk::Filter::eLinear,
+		vk::Filter::eLinear,
+		vk::SamplerMipmapMode::eLinear,
+		vk::SamplerAddressMode::eRepeat,
+		vk::SamplerAddressMode::eRepeat,
+		vk::SamplerAddressMode::eRepeat,
+		0.f,
+		VK_TRUE,
+		16.f,
+		VK_FALSE,
+		vk::CompareOp::eAlways,
+		0.f,
+		0.f,
+		vk::BorderColor::eIntOpaqueBlack,
+		VK_FALSE
+	);
+
+	vk::PhysicalDeviceProperties properties = m_Device.GetPhysicalDevice().getProperties();
+	if (properties.limits.maxSamplerAnisotropy > 0)
+	{
+		samplerInfo.anisotropyEnable = VK_TRUE;
+		samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+	}
+
+	m_Sampler = m_Device.GetDevice().createSampler(samplerInfo);
 }

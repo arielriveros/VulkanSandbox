@@ -28,9 +28,8 @@ void Renderer::Initialize()
 		m_Device->Initialize();
 		m_SwapChain = new SwapChain(*m_Device, m_Window);
 		m_SwapChain->Initialize();
-		CreateTextureSampler();
 		SetupTextures();
-		SetupGlobalUBO();
+		SetupDescriptors();
 		m_Pipeline = new Pipeline(m_Device->GetDevice(), m_SwapChain->GetRenderPass());
 		m_Pipeline->Create(
 			"resources/shaders/default.vert.spv",
@@ -72,10 +71,9 @@ void Renderer::Terminate()
 	try
 	{
 		DestroyMeshes();
-		DestroyTextureSampler();
 		DestroyTextures();
 		m_Pipeline->Terminate();
-		DestroyGlobalUBO();
+		DestroyDescriptors();
 		DestroySyncObjects();
 		m_SwapChain->Terminate();
 		m_Device->Terminate();
@@ -137,7 +135,7 @@ void Renderer::RecreateSwapChain()
 	m_SwapChain->Recreate();
 }
 
-void Renderer::SetupGlobalUBO()
+void Renderer::SetupDescriptors()
 {
 	vk::DeviceSize bufferSize = sizeof(GlobalUBO);
 
@@ -164,7 +162,7 @@ void Renderer::SetupGlobalUBO()
 		m_Frames[i].GlobalUniformBuffer->Map();
 
 		vk::DescriptorBufferInfo bufferInfo = m_Frames[i].GlobalUniformBuffer->DescriptorInfo();
-		vk::DescriptorImageInfo imageInfo = m_Texture->DescriptorInfo(m_TextureSampler);
+		vk::DescriptorImageInfo imageInfo = m_Texture->DescriptorInfo();
 
 		DescriptorWriter (*m_GlobalDescriptorSetLayout, *m_GlobalDescriptorPool)
 			.WriteBuffer(0, &bufferInfo)
@@ -173,7 +171,7 @@ void Renderer::SetupGlobalUBO()
 	}
 }
 
-void Renderer::DestroyGlobalUBO()
+void Renderer::DestroyDescriptors()
 {
 	m_GlobalDescriptorPool.reset();
 	m_GlobalDescriptorSetLayout.reset();
@@ -189,42 +187,6 @@ void Renderer::UpdateGlobalUBO(uint32_t currentImage)
 	GlobalUBO ubo{};
 	ubo.ViewProjection = m_Camera.GetProjectionMatrix() * m_Camera.GetViewMatrix();
 	m_Frames[currentImage].GlobalUniformBuffer->WriteToBuffer(&ubo);
-}
-
-void Renderer::CreateTextureSampler()
-{
-	vk::SamplerCreateInfo samplerInfo(
-		vk::SamplerCreateFlags(),
-		vk::Filter::eLinear,
-		vk::Filter::eLinear,
-		vk::SamplerMipmapMode::eLinear,
-		vk::SamplerAddressMode::eRepeat,
-		vk::SamplerAddressMode::eRepeat,
-		vk::SamplerAddressMode::eRepeat,
-		0.f,
-		VK_TRUE,
-		16.f,
-		VK_FALSE,
-		vk::CompareOp::eAlways,
-		0.f,
-		0.f,
-		vk::BorderColor::eIntOpaqueBlack,
-		VK_FALSE
-	);
-
-	vk::PhysicalDeviceProperties properties = m_Device->GetPhysicalDevice().getProperties();
-	if (properties.limits.maxSamplerAnisotropy > 0)
-	{
-		samplerInfo.anisotropyEnable = VK_TRUE;
-		samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-	}
-
-	m_TextureSampler = m_Device->GetDevice().createSampler(samplerInfo);
-}
-
-void Renderer::DestroyTextureSampler()
-{
-	m_Device->GetDevice().destroySampler(m_TextureSampler);
 }
 
 void Renderer::CreateCommandBuffers()

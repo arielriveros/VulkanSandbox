@@ -153,6 +153,7 @@ void Pipeline::Create(
 	if (result != vk::Result::eSuccess)
 		throw std::runtime_error("Failed to create graphics pipeline");
 
+	m_DescriptorSetLayout = descriptorSetLayout;
 	m_Pipeline = pipeline;
 
 	m_Device.destroyShaderModule(vertShaderModule);
