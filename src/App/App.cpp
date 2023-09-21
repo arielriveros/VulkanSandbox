@@ -2,6 +2,12 @@
 #include <chrono>
 #include "App.h"
 
+#define BIND_CALLBACK(func) std::bind(&App::func, this)
+#define BIND_CALLBACK_1(func) std::bind(&App::func, this, std::placeholders::_1)
+#define BIND_CALLBACK_2(func) std::bind(&App::func, this, std::placeholders::_1, std::placeholders::_2)
+#define BIND_CALLBACK_3(func) std::bind(&App::func, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
+#define BIND_CALLBACK_4(func) std::bind(&App::func, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
+
 App::App()
 {
 }
@@ -14,19 +20,23 @@ void App::Init()
 {
 	m_Window.Initialize();
 	m_Window.SetFPSCounterEnabled(true);
-	m_Window.SetOnResizeCallback(std::bind(&App::OnResize, this, std::placeholders::_1, std::placeholders::_2));
+	m_Window.SetOnResizeCallback(BIND_CALLBACK_2(OnResize));
 	
 	m_Camera = Camera();
 	m_Camera.Position.y = 3.0f;
 	m_Camera.Position.z = 3.0f;
 	m_Camera.Rotation.x = -45.0f;
 
-	Model* cube1 = new Model("cube1", MeshData::Cube());
-	m_Models.push_back(cube1);
-	Model* cube2 = new Model("cube2", MeshData::Cube());
-	cube2->Position.x = -1.0f;
-	cube2->Position.z = -1.0f;
-	m_Models.push_back(cube2);
+	Model* cube = new Model("cube", MeshData::Cube());
+	m_Models.push_back(cube);
+	Model* sphere = new Model("sphere", MeshData::Sphere(18));
+	sphere->Position.x = -1.0f;
+	sphere->Position.z = -1.0f;
+	m_Models.push_back(sphere);
+	Model* pyramid = new Model("pyramid", MeshData::Pyramid());
+	pyramid->Position.x = 1.0f;
+	pyramid->Position.z = -1.0f;
+	m_Models.push_back(pyramid);
 
 	m_Renderer = std::make_unique<Renderer>(m_Window, m_Camera, m_Models);
 	m_Renderer->Initialize();
@@ -60,7 +70,7 @@ void App::OnResize(int width, int height)
 
 void App::HandleInput()
 {
-	m_Window.OnMouseMove(std::bind(&App::OnMouseMoveCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+	m_Window.OnMouseMove(BIND_CALLBACK_4(OnMouseMoveCallback));
 
 	if (m_Window.IsMouseButtonReleased(Mouse::Button::Right) && m_Window.IsMouseButtonReleased(Mouse::Button::Left))
 		m_Window.ResetOffset();

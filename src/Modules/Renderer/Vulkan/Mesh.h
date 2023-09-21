@@ -7,22 +7,12 @@
 struct Vertex
 {
 	glm::vec3 Position;
-	glm::vec3 Color;
 	glm::vec2 TexCoord;
+	glm::vec3 Normal;
 
 	static VertexDescriptions GetDescriptions();
 	static vk::VertexInputBindingDescription GetBindingDescription();
 	static std::vector<vk::VertexInputAttributeDescription> GetAttributeDescriptions();
-};
-
-struct Color
-{
-	static const glm::vec3 red() { return {1.0f, 0.0f, 0.0f}; }
-	static const glm::vec3 green() { return {0.0f, 1.0f, 0.0f}; }
-	static const glm::vec3 blue() { return {0.0f, 0.0f, 1.0f}; }
-	static const glm::vec3 cyan() { return {0.0f, 1.0f, 1.0f}; }
-	static const glm::vec3 magenta() { return {1.0f, 0.0f, 1.0f}; }
-	static const glm::vec3 yellow() { return {1.0f, 1.0f, 0.0f}; }
 };
 
 struct MeshData
@@ -32,6 +22,8 @@ struct MeshData
 
 	static MeshData Triangle();
 	static MeshData Cube();
+	static MeshData Pyramid();
+	static MeshData Sphere(uint32_t definition = 36);
 };
 
 class Mesh

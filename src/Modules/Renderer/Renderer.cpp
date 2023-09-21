@@ -428,6 +428,7 @@ void Renderer::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t ima
 		
 		PushConstantData pushConstantData{};
 		pushConstantData.Model = m_Models[i]->GetModelMatrix();
+		pushConstantData.Normal = m_Models[i]->GetNormalMatrix();
 		commandBuffer.pushConstants(m_Pipeline->GetLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstantData), &pushConstantData);
 
 		mesh->Bind(commandBuffer);

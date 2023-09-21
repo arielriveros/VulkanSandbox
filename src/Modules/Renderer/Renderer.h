@@ -28,6 +28,7 @@ struct GlobalUBO {
 
 struct PushConstantData {
 	glm::mat4 Model;
+	glm::mat4 Normal;
 };
 
 struct FrameData {

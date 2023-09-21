@@ -8,13 +8,31 @@ Model::~Model()
 {
 }
 
+glm::mat4 Model::GetTranslationMatrix() const
+{
+    return glm::translate(glm::mat4(1.0f), Position);
+}
+
+glm::mat4 Model::GetRotationMatrix() const
+{
+    glm::mat4 rotation = glm::mat4(1.0f);
+    rotation = glm::rotate(rotation, glm::radians(Rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    rotation = glm::rotate(rotation, glm::radians(Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    rotation = glm::rotate(rotation, glm::radians(Rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    return rotation;
+}
+
+glm::mat4 Model::GetScaleMatrix() const
+{
+    return glm::scale( glm::mat4(1.0f), Scale);
+}
+
 glm::mat4 Model::GetModelMatrix() const
 {
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, Position);
-    model = glm::rotate(model, glm::radians(Rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(Rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-    model = glm::scale(model, Scale);
-    return model;
+    return GetTranslationMatrix() * GetRotationMatrix() * GetScaleMatrix();
+}
+
+glm::mat4 Model::GetNormalMatrix() const
+{
+    return glm::transpose(glm::inverse(GetModelMatrix()));
 }

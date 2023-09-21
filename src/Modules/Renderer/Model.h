@@ -16,7 +16,11 @@ public:
     glm::vec3 Rotation = glm::vec3(0.0f);
     glm::vec3 Scale = glm::vec3(1.0f);
 
+    glm::mat4 GetTranslationMatrix() const;
+    glm::mat4 GetRotationMatrix() const;
+    glm::mat4 GetScaleMatrix() const;
     glm::mat4 GetModelMatrix() const;
+    glm::mat4 GetNormalMatrix() const;
     MeshData GetMeshData() const { return m_MeshData; }
     std::string GetName() const { return m_Name; }
 
