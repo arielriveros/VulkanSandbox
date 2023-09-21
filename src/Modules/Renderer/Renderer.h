@@ -14,6 +14,7 @@
 #include "Vulkan/Mesh.h"
 #include "Vulkan/Pipeline.h"
 #include "Vulkan/SwapChain.h"
+#include "Vulkan/Texture.h"
 #include "Vulkan/ValidationLayer.h"
 #include "Camera.h"
 #include "Model.h"
@@ -57,18 +58,16 @@ public:
 private:
 	void SetupMeshes();
 	void DestroyMeshes();
+
+	void SetupTextures();
+	void DestroyTextures();
+
 	void RecreateSwapChain();
 
 	void SetupGlobalUBO();
 	void DestroyGlobalUBO();
 	void UpdateGlobalUBO(uint32_t currentImage);
 
-	void CreateTextureImage();
-	void DestroyTextureImage();
-	void CreateTextureImageViews();
-	void DestroyTextureImageViews();
-	void TransitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
-	void CopyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height);
 	void CreateTextureSampler();
 	void DestroyTextureSampler();
 
@@ -97,9 +96,7 @@ private:
 	std::vector<FrameData> m_Frames = std::vector<FrameData>(MAX_FRAMES_IN_FLIGHT);
 	uint32_t m_CurrentFrame = 0;
 
-	vk::Image m_TextureImage;
-	vk::DeviceMemory m_TextureImageMemory;
-	vk::ImageView m_TextureImageView;
+	std::unique_ptr<Texture> m_Texture{};
 	vk::Sampler m_TextureSampler;
 
 	std::unique_ptr<DescriptorPool> m_GlobalDescriptorPool{};

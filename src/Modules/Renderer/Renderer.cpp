@@ -1,7 +1,5 @@
 #include <iostream>
 #include <array>
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 #include "Renderer.h"
 
 
@@ -30,9 +28,8 @@ void Renderer::Initialize()
 		m_Device->Initialize();
 		m_SwapChain = new SwapChain(*m_Device, m_Window);
 		m_SwapChain->Initialize();
-		CreateTextureImage();
-		CreateTextureImageViews();
 		CreateTextureSampler();
+		SetupTextures();
 		SetupGlobalUBO();
 		m_Pipeline = new Pipeline(m_Device->GetDevice(), m_SwapChain->GetRenderPass());
 		m_Pipeline->Create(
@@ -75,9 +72,8 @@ void Renderer::Terminate()
 	try
 	{
 		DestroyMeshes();
-		DestroyTextureImageViews();
-		DestroyTextureImage();
 		DestroyTextureSampler();
+		DestroyTextures();
 		m_Pipeline->Terminate();
 		DestroyGlobalUBO();
 		DestroySyncObjects();
@@ -120,6 +116,18 @@ void Renderer::DestroyMeshes()
 	}
 }
 
+void Renderer::SetupTextures()
+{
+	m_Texture = std::make_unique<Texture>(*m_Device);
+	m_Texture->LoadFromFile("resources/images/plant.jpg");
+}
+
+void Renderer::DestroyTextures()
+{
+	m_Texture->Destroy();
+	m_Texture.reset();
+}
+
 void Renderer::RecreateSwapChain()
 {
 	while (m_Width == 0 || m_Height == 0)
@@ -156,11 +164,7 @@ void Renderer::SetupGlobalUBO()
 		m_Frames[i].GlobalUniformBuffer->Map();
 
 		vk::DescriptorBufferInfo bufferInfo = m_Frames[i].GlobalUniformBuffer->DescriptorInfo();
-		vk::DescriptorImageInfo imageInfo(
-			m_TextureSampler,
-			m_TextureImageView,
-			vk::ImageLayout::eShaderReadOnlyOptimal
-		);
+		vk::DescriptorImageInfo imageInfo = m_Texture->DescriptorInfo(m_TextureSampler);
 
 		DescriptorWriter (*m_GlobalDescriptorSetLayout, *m_GlobalDescriptorPool)
 			.WriteBuffer(0, &bufferInfo)
@@ -185,149 +189,6 @@ void Renderer::UpdateGlobalUBO(uint32_t currentImage)
 	GlobalUBO ubo{};
 	ubo.ViewProjection = m_Camera.GetProjectionMatrix() * m_Camera.GetViewMatrix();
 	m_Frames[currentImage].GlobalUniformBuffer->WriteToBuffer(&ubo);
-}
-
-void Renderer::CreateTextureImage()
-{
-	int textureWidth, textureHeight, textureChannels;
-    stbi_uc* pixels = stbi_load(
-		"resources/assets/images/plant.jpg",
-		&textureWidth,
-		&textureHeight,
-		&textureChannels,
-		STBI_rgb_alpha
-	);
-	vk::DeviceSize imageSize = textureWidth * textureHeight * 4;
-
-    if (!pixels)
-        throw std::runtime_error("Failed to load texture image");
-
-	vk::DeviceMemory stagingBufferMemory;
-	vk::Buffer stagingBuffer = m_Device->CreateBuffer(
-		imageSize,
-		vk::BufferUsageFlagBits::eTransferSrc,
-		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
-		stagingBufferMemory
-	);
-
-	void* data = m_Device->GetDevice().mapMemory(stagingBufferMemory, 0, imageSize, vk::MemoryMapFlags());
-	memcpy(data, pixels, static_cast<size_t>(imageSize));
-	m_Device->GetDevice().unmapMemory(stagingBufferMemory);
-
-	stbi_image_free(pixels);
-	
-	m_TextureImage = m_Device->CreateImage(
-		textureWidth,
-		textureHeight,
-		vk::Format::eR8G8B8A8Srgb,
-		vk::ImageTiling::eOptimal,
-		vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
-		vk::MemoryPropertyFlagBits::eDeviceLocal,
-		m_TextureImageMemory
-	);
-
-	TransitionImageLayout(m_TextureImage, vk::Format::eR8G8B8A8Srgb, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
-	CopyBufferToImage(stagingBuffer, m_TextureImage, static_cast<uint32_t>(textureWidth), static_cast<uint32_t>(textureHeight));
-	TransitionImageLayout(m_TextureImage, vk::Format::eR8G8B8A8Srgb, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-
-	m_Device->GetDevice().destroyBuffer(stagingBuffer);
-	m_Device->GetDevice().freeMemory(stagingBufferMemory);
-}
-
-void Renderer::DestroyTextureImage()
-{
-	m_Device->GetDevice().destroyImage(m_TextureImage);
-	m_Device->GetDevice().freeMemory(m_TextureImageMemory);
-}
-
-void Renderer::CreateTextureImageViews()
-{
-	m_TextureImageView = m_Device->CreateImageView(m_TextureImage, vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
-}
-
-void Renderer::DestroyTextureImageViews()
-{
-	m_Device->GetDevice().destroyImageView(m_TextureImageView);
-}
-
-void Renderer::TransitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout)
-{
-	vk::CommandBuffer commandBuffer = m_Device->BeginSingleTimeCommands();
-
-	vk::ImageMemoryBarrier barrier(
-		vk::AccessFlags(),
-		vk::AccessFlags(),
-		oldLayout,
-		newLayout,
-		VK_QUEUE_FAMILY_IGNORED,
-		VK_QUEUE_FAMILY_IGNORED,
-		image,
-		vk::ImageSubresourceRange(
-			vk::ImageAspectFlagBits::eColor,
-			0, 1,
-			0, 1
-		)
-	);
-
-	vk::PipelineStageFlags sourceStage;
-	vk::PipelineStageFlags destinationStage;
-
-	if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal)
-	{
-		barrier.srcAccessMask = vk::AccessFlags();
-		barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-
-		sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
-		destinationStage = vk::PipelineStageFlagBits::eTransfer;
-	}
-
-	else if (oldLayout == vk::ImageLayout::eTransferDstOptimal && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal)
-	{
-		barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-		barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-
-		sourceStage = vk::PipelineStageFlagBits::eTransfer;
-		destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
-	}
-
-	else
-		throw std::invalid_argument("Unsupported layout transition");
-
-	commandBuffer.pipelineBarrier(
-		sourceStage,
-		destinationStage,
-		vk::DependencyFlags(),
-		0, nullptr,
-		0, nullptr,
-		1, &barrier
-	);
-
-	m_Device->EndSingleTimeCommands(commandBuffer);
-}
-
-void Renderer::CopyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height)
-{
-	vk::CommandBuffer commandBuffer = m_Device->BeginSingleTimeCommands();
-
-	vk::BufferImageCopy region(
-		0, 0, 0,
-		vk::ImageSubresourceLayers(
-			vk::ImageAspectFlagBits::eColor,
-			0, 0, 1
-		),
-		vk::Offset3D(0, 0, 0),
-		vk::Extent3D(width, height, 1)
-	);
-
-	commandBuffer.copyBufferToImage(
-		buffer,
-		image,
-		vk::ImageLayout::eTransferDstOptimal,
-		1,
-		&region
-	);
-
-	m_Device->EndSingleTimeCommands(commandBuffer);
 }
 
 void Renderer::CreateTextureSampler()

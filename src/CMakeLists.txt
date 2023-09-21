@@ -24,6 +24,8 @@ add_executable(${PROJECT_NAME}
 	"Modules/Renderer/Vulkan/Pipeline.cpp"
 	"Modules/Renderer/Vulkan/SwapChain.h"
 	"Modules/Renderer/Vulkan/SwapChain.cpp"
+	"Modules/Renderer/Vulkan/Texture.h"
+	"Modules/Renderer/Vulkan/Texture.cpp"
 	"Modules/Renderer/Vulkan/ValidationLayer.h"
 	"Modules/Renderer/Vulkan/ValidationLayer.cpp")
 

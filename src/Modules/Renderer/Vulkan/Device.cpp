@@ -293,6 +293,31 @@ vk::ImageView Device::CreateImageView(vk::Image image, vk::Format format, vk::Im
 	return m_Device.createImageView(viewInfo);
 }
 
+void Device::CopyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height)
+{
+	vk::CommandBuffer commandBuffer = BeginSingleTimeCommands();
+
+	vk::BufferImageCopy region(
+		0, 0, 0,
+		vk::ImageSubresourceLayers(
+			vk::ImageAspectFlagBits::eColor,
+			0, 0, 1
+		),
+		vk::Offset3D(0, 0, 0),
+		vk::Extent3D(width, height, 1)
+	);
+
+	commandBuffer.copyBufferToImage(
+		buffer,
+		image,
+		vk::ImageLayout::eTransferDstOptimal,
+		1,
+		&region
+	);
+
+	EndSingleTimeCommands(commandBuffer);
+}
+
 bool Device::CheckDeviceExtensionSupport(vk::PhysicalDevice device)
 {
     std::vector<vk::ExtensionProperties> availableExtensions = device.enumerateDeviceExtensionProperties();
