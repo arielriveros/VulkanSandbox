@@ -102,14 +102,17 @@ void App::HandleInput()
 
 	if (m_Window.IsKeyPressed(Keyboard::Key::PageDown))
 		m_Models[0]->Position.x += delta;
+
+	if (m_Window.IsKeyPressed(Keyboard::Key::Escape))
+		m_Window.Close();
 }
 
 void App::OnMouseMoveCallback(float xPos, float yPos, float xOffset, float yOffset)
 {
 	if (m_Window.IsMouseButtonPressed(Mouse::Button::Right))
 	{
-		m_Camera.Rotation.y += xOffset;
-		m_Camera.Rotation.x += yOffset;
+		m_Camera.Rotation.y += xOffset * 0.25f;
+		m_Camera.Rotation.x += yOffset * 0.25f;
 		m_Camera.UpdateRotation();
 	}
 

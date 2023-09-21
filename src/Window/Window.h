@@ -17,6 +17,7 @@ public:
 	void Initialize();
 	void Terminate();
 	bool ShouldClose();
+	void Close();
 	void PollEvents();
 	void UpdateFPSCounter(float updateFrequency = 0.5f);
 
