@@ -2,7 +2,7 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 
-struct Descriptions
+struct VertexDescriptions
 {
 	vk::VertexInputBindingDescription BindingDescription;
 	std::vector<vk::VertexInputAttributeDescription> AttributeDescriptions;
@@ -17,7 +17,7 @@ public:
 	void Create(
 		const std::string& vertexSource,
 		const std::string& fragmentSource,
-		Descriptions descriptions,
+		VertexDescriptions descriptions,
 		vk::DescriptorSetLayout descriptorSetLayout,
 		uint32_t );
 	void Terminate();

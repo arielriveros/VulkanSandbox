@@ -3,11 +3,13 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
+#include <memory.h>
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "Vulkan/Buffer.h"
+#include "Vulkan/Descriptor.h"
 #include "Vulkan/Device.h"
 #include "Vulkan/Mesh.h"
 #include "Vulkan/Pipeline.h"
@@ -20,7 +22,7 @@
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-struct UniformBufferObject {
+struct GlobalUBO {
 	glm::mat4 ViewProjection;
 };
 
@@ -34,6 +36,9 @@ struct FrameData {
 	vk::Fence RenderFence;
 
 	vk::CommandBuffer CommandBuffer;
+
+	std::unique_ptr<Buffer> GlobalUniformBuffer;
+	vk::DescriptorSet GlobalDescriptorSet;
 };
 
 class Renderer: public IModule
@@ -53,9 +58,9 @@ private:
 	void DestroyMeshes();
 	void RecreateSwapChain();
 
-	void CreateUniformBuffers();
-	void DestroyUniformBuffers();
-	void UpdateUniformBuffer(uint32_t currentImage);
+	void SetupGlobalUBO();
+	void DestroyGlobalUBO();
+	void UpdateGlobalUBO(uint32_t currentImage);
 
 	void CreateTextureImage();
 	void DestroyTextureImage();
@@ -65,12 +70,6 @@ private:
 	void CopyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height);
 	void CreateTextureSampler();
 	void DestroyTextureSampler();
-
-	void CreateDescriptorSetLayout();
-	void DestroyDescriptorSetLayout();
-	void CreateDescriptorPool();
-	void DestroyeDescriptorPool();
-	void CreateDescriptorSets();
 
 	void CreateCommandBuffers();
 	void RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex);
@@ -93,7 +92,6 @@ private:
 	SwapChain* m_SwapChain;
 
 	std::unordered_map<std::string, Mesh*> m_Meshes;
-	std::vector<Buffer*> m_UniformBuffers;
 
 	std::vector<FrameData> m_Frames = std::vector<FrameData>(MAX_FRAMES_IN_FLIGHT);
 	uint32_t m_CurrentFrame = 0;
@@ -103,7 +101,6 @@ private:
 	vk::ImageView m_TextureImageView;
 	vk::Sampler m_TextureSampler;
 
-	vk::DescriptorSetLayout m_DescriptorSetLayout;
-	vk::DescriptorPool m_DescriptorPool;
-	std::vector<vk::DescriptorSet> m_DescriptorSets;
+	std::unique_ptr<DescriptorPool> m_GlobalDescriptorPool{};
+	std::unique_ptr<DescriptorSetLayout> m_GlobalDescriptorSetLayout{};
 };

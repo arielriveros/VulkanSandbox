@@ -9,7 +9,7 @@ Pipeline::~Pipeline() {}
 void Pipeline::Create(
 	const std::string &vertexSource,
 	const std::string &fragmentSource,
-	Descriptions descriptions,
+	VertexDescriptions descriptions,
 	vk::DescriptorSetLayout descriptorSetLayout,
 	uint32_t pushConstantRangeSize
 	)

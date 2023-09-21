@@ -30,21 +30,18 @@ void Renderer::Initialize()
 		m_Device->Initialize();
 		m_SwapChain = new SwapChain(*m_Device, m_Window);
 		m_SwapChain->Initialize();
-		CreateDescriptorSetLayout();
+		CreateTextureImage();
+		CreateTextureImageViews();
+		CreateTextureSampler();
+		SetupGlobalUBO();
 		m_Pipeline = new Pipeline(m_Device->GetDevice(), m_SwapChain->GetRenderPass());
 		m_Pipeline->Create(
 			"resources/shaders/default.vert.spv",
 			"resources/shaders/default.frag.spv",
 			Vertex::GetDescriptions(),
-			m_DescriptorSetLayout,
+			m_GlobalDescriptorSetLayout->GetDescriptorSetLayout(),
 			sizeof(PushConstantData));
-		CreateTextureImage();
-		CreateTextureImageViews();
-		CreateTextureSampler();
 		SetupMeshes();
-		CreateUniformBuffers();
-		CreateDescriptorPool();
-		CreateDescriptorSets();
 		CreateCommandBuffers();
 		CreateSyncObjects();
 	}
@@ -81,10 +78,8 @@ void Renderer::Terminate()
 		DestroyTextureImageViews();
 		DestroyTextureImage();
 		DestroyTextureSampler();
-		DestroyeDescriptorPool();
-		DestroyDescriptorSetLayout();
 		m_Pipeline->Terminate();
-		DestroyUniformBuffers();
+		DestroyGlobalUBO();
 		DestroySyncObjects();
 		m_SwapChain->Terminate();
 		m_Device->Terminate();
@@ -134,39 +129,62 @@ void Renderer::RecreateSwapChain()
 	m_SwapChain->Recreate();
 }
 
-void Renderer::CreateUniformBuffers()
+void Renderer::SetupGlobalUBO()
 {
-	VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+	vk::DeviceSize bufferSize = sizeof(GlobalUBO);
 
-	m_UniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	m_GlobalDescriptorSetLayout = DescriptorSetLayout::Builder(*m_Device)
+		.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex)
+		.AddBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
+		.Build();
 
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	m_GlobalDescriptorPool = DescriptorPool::Builder(*m_Device)
+		.SetMaxSets(MAX_FRAMES_IN_FLIGHT)
+		.AddPoolSize(vk::DescriptorType::eUniformBuffer, MAX_FRAMES_IN_FLIGHT)
+		.AddPoolSize(vk::DescriptorType::eCombinedImageSampler, MAX_FRAMES_IN_FLIGHT)
+		.Build();
+
+	for (uint32_t i = 0; i < m_Frames.size(); i++)
 	{
-		m_UniformBuffers[i] = new Buffer(
+		m_Frames[i].GlobalUniformBuffer = std::make_unique<Buffer>(
 			*m_Device,
 			bufferSize,
 			1,
 			vk::BufferUsageFlagBits::eUniformBuffer,
 			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
 		);
-		m_UniformBuffers[i]->Map();
+		m_Frames[i].GlobalUniformBuffer->Map();
+
+		vk::DescriptorBufferInfo bufferInfo = m_Frames[i].GlobalUniformBuffer->DescriptorInfo();
+		vk::DescriptorImageInfo imageInfo(
+			m_TextureSampler,
+			m_TextureImageView,
+			vk::ImageLayout::eShaderReadOnlyOptimal
+		);
+
+		DescriptorWriter (*m_GlobalDescriptorSetLayout, *m_GlobalDescriptorPool)
+			.WriteBuffer(0, &bufferInfo)
+			.WriteImage(1, &imageInfo)
+			.Build(m_Frames[i].GlobalDescriptorSet);
 	}
 }
 
-void Renderer::DestroyUniformBuffers()
+void Renderer::DestroyGlobalUBO()
 {
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	m_GlobalDescriptorPool.reset();
+	m_GlobalDescriptorSetLayout.reset();
+
+	for (size_t i = 0; i < m_Frames.size(); i++)
 	{
-		delete m_UniformBuffers[i];
+		m_Frames[i].GlobalUniformBuffer.reset();
 	}
 }
 
-void Renderer::UpdateUniformBuffer(uint32_t currentImage)
+void Renderer::UpdateGlobalUBO(uint32_t currentImage)
 {
-	UniformBufferObject ubo{};
+	GlobalUBO ubo{};
 	ubo.ViewProjection = m_Camera.GetProjectionMatrix() * m_Camera.GetViewMatrix();
-
-	m_UniformBuffers[currentImage]->WriteToBuffer(&ubo);
+	m_Frames[currentImage].GlobalUniformBuffer->WriteToBuffer(&ubo);
 }
 
 void Renderer::CreateTextureImage()
@@ -348,115 +366,6 @@ void Renderer::DestroyTextureSampler()
 	m_Device->GetDevice().destroySampler(m_TextureSampler);
 }
 
-void Renderer::CreateDescriptorSetLayout()
-{
-	vk::DescriptorSetLayoutBinding uboLayoutBinding(
-		0,
-		vk::DescriptorType::eUniformBuffer,
-		1,
-		vk::ShaderStageFlagBits::eVertex
-	);
-	vk::DescriptorSetLayoutBinding samplerLayoutBinding(
-		1,
-		vk::DescriptorType::eCombinedImageSampler,
-		1,
-		vk::ShaderStageFlagBits::eFragment
-	);
-
-	std::array<vk::DescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
-
-	vk::DescriptorSetLayoutCreateInfo layoutInfo(
-		vk::DescriptorSetLayoutCreateFlags(),
-		static_cast<uint32_t>(bindings.size()),
-		bindings.data()
-	);
-
-	m_DescriptorSetLayout = m_Device->GetDevice().createDescriptorSetLayout(layoutInfo);
-}
-
-void Renderer::DestroyDescriptorSetLayout()
-{
-	m_Device->GetDevice().destroyDescriptorSetLayout(m_DescriptorSetLayout);
-}
-
-void Renderer::CreateDescriptorPool()
-{
-	std::vector<vk::DescriptorPoolSize> poolSizes = {
-		vk::DescriptorPoolSize(
-			vk::DescriptorType::eUniformBuffer,
-			static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)
-		),
-		vk::DescriptorPoolSize(
-			vk::DescriptorType::eCombinedImageSampler,
-			static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)
-		)
-	};
-
-	vk::DescriptorPoolCreateInfo poolInfo(
-		vk::DescriptorPoolCreateFlags(),
-		static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT),
-		static_cast<uint32_t>(poolSizes.size()),
-		poolSizes.data()
-	);
-
-	m_DescriptorPool = m_Device->GetDevice().createDescriptorPool(poolInfo);
-}
-
-void Renderer::DestroyeDescriptorPool()
-{
-	m_Device->GetDevice().destroyDescriptorPool(m_DescriptorPool);
-}
-
-void Renderer::CreateDescriptorSets()
-{
-	std::vector<vk::DescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_DescriptorSetLayout);
-	vk::DescriptorSetAllocateInfo allocInfo( m_DescriptorPool, layouts.size(), layouts.data() );
-
-	m_DescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-
-	vk::Result result = m_Device->GetDevice().allocateDescriptorSets(&allocInfo, m_DescriptorSets.data());
-	if (result != vk::Result::eSuccess)
-		throw std::runtime_error("Failed to allocate descriptor sets");
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		vk::DescriptorBufferInfo bufferInfo(
-			m_UniformBuffers[i]->GetBuffer(),	// Buffer
-			0,									// Offset
-			sizeof(UniformBufferObject) 		// Range
-		);
-
-		vk::DescriptorImageInfo imageInfo(
-			m_TextureSampler,						// Sampler
-			m_TextureImageView,						// ImageView
-			vk::ImageLayout::eShaderReadOnlyOptimal // ImageLayout
-		);
-
-		std::array<vk::WriteDescriptorSet, 2> descriptorWrites{
-			vk::WriteDescriptorSet(
-				m_DescriptorSets[i],					// Descriptor set
-				0, 										// Binding
-				0, 										// Array element
-				1, vk::DescriptorType::eUniformBuffer, 	// Descriptor count / Descriptor type
-				nullptr, 								// Descriptor image info
-				&bufferInfo, 							// Descriptor buffer info
-				nullptr 								// Descriptor texel buffer view
-			),
-			vk::WriteDescriptorSet(
-				m_DescriptorSets[i],							// Descriptor set
-				1, 												// Binding
-				0, 												// Array element
-				1, vk::DescriptorType::eCombinedImageSampler, 	// Descriptor count / Descriptor type
-				&imageInfo, 									// Descriptor image info
-				nullptr, 										// Descriptor buffer info
-				nullptr 										// Descriptor texel buffer view
-			)
-		};
-
-		m_Device->GetDevice().updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
-	}
-}
-
 void Renderer::CreateCommandBuffers()
 {
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -506,7 +415,12 @@ void Renderer::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t ima
 	commandBuffer.setScissor(0, 1, &scissor);
 
 	m_Pipeline->Bind(commandBuffer);
-	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_Pipeline->GetLayout(), 0, 1, &m_DescriptorSets[m_CurrentFrame], 0, nullptr);
+	commandBuffer.bindDescriptorSets(
+		vk::PipelineBindPoint::eGraphics,
+		m_Pipeline->GetLayout(),
+		0,
+		1, &m_Frames[m_CurrentFrame].GlobalDescriptorSet,
+		0, nullptr);
 
 	for (uint32_t i = 0; i < m_Models.size(); i++)
 	{
@@ -571,7 +485,7 @@ void Renderer::DrawFrame()
 	if (currentBuffer.result != vk::Result::eSuccess)
 		throw std::runtime_error("Failed to acquire swap chain image");
 
-	UpdateUniformBuffer(m_CurrentFrame);
+	UpdateGlobalUBO(m_CurrentFrame);
 
 	while (vk::Result::eTimeout == m_Device->GetDevice().resetFences(1, &m_Frames[m_CurrentFrame].RenderFence));
 	m_Frames[m_CurrentFrame].CommandBuffer.reset(vk::CommandBufferResetFlagBits::eReleaseResources);

@@ -1,8 +1,8 @@
 #include "Mesh.h"
 
-Descriptions Vertex::GetDescriptions()
+VertexDescriptions Vertex::GetDescriptions()
 {
-	Descriptions descriptions;
+	VertexDescriptions descriptions;
 	descriptions.BindingDescription = GetBindingDescription();
 	descriptions.AttributeDescriptions = GetAttributeDescriptions();
 	return descriptions;

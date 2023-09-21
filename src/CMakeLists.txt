@@ -14,6 +14,8 @@ add_executable(${PROJECT_NAME}
 	"Modules/Renderer/Model.cpp"
 	"Modules/Renderer/Vulkan/Buffer.h"
 	"Modules/Renderer/Vulkan/Buffer.cpp"
+	"Modules/Renderer/Vulkan/Descriptor.h"
+	"Modules/Renderer/Vulkan/Descriptor.cpp"
 	"Modules/Renderer/Vulkan/Device.h"
 	"Modules/Renderer/Vulkan/Device.cpp"
 	"Modules/Renderer/Vulkan/Mesh.h"
