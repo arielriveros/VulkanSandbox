@@ -23,7 +23,7 @@
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-struct GlobalUBO {
+struct SceneUBO {
 	glm::mat4 ViewProjection;
 };
 
@@ -39,8 +39,14 @@ struct FrameData {
 
 	vk::CommandBuffer CommandBuffer;
 
-	std::unique_ptr<Buffer> GlobalUniformBuffer;
-	vk::DescriptorSet GlobalDescriptorSet;
+	std::unique_ptr<Buffer> SceneUniformBuffer;
+	vk::DescriptorSet SceneDescriptorSet;
+};
+
+struct Material {
+	std::unique_ptr<Texture> Texture;
+	vk::DescriptorSet DescriptorSet;
+	std::unique_ptr<DescriptorSetLayout> DescriptorSetLayout{};
 };
 
 class Renderer: public IModule
@@ -59,14 +65,14 @@ private:
 	void SetupMeshes();
 	void DestroyMeshes();
 
-	void SetupTextures();
-	void DestroyTextures();
+	void SetupMaterials();
+	void DestroyMaterials();
 
 	void RecreateSwapChain();
 
 	void SetupDescriptors();
 	void DestroyDescriptors();
-	void UpdateGlobalUBO(uint32_t currentImage);
+	void UpdateSceneUBO(uint32_t currentImage);
 
 	void CreateCommandBuffers();
 	void RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex);
@@ -89,12 +95,11 @@ private:
 	SwapChain* m_SwapChain;
 
 	std::unordered_map<std::string, Mesh*> m_Meshes;
+	std::unordered_map<std::string, Material*> m_Materials;
 
 	std::vector<FrameData> m_Frames = std::vector<FrameData>(MAX_FRAMES_IN_FLIGHT);
 	uint32_t m_CurrentFrame = 0;
 
-	std::unique_ptr<Texture> m_Texture{};
-
 	std::unique_ptr<DescriptorPool> m_GlobalDescriptorPool{};
-	std::unique_ptr<DescriptorSetLayout> m_GlobalDescriptorSetLayout{};
+	std::unique_ptr<DescriptorSetLayout> m_SceneDescriptorSetLayout{};
 };

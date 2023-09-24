@@ -28,14 +28,18 @@ void Renderer::Initialize()
 		m_Device->Initialize();
 		m_SwapChain = new SwapChain(*m_Device, m_Window);
 		m_SwapChain->Initialize();
-		SetupTextures();
 		SetupDescriptors();
+		SetupMaterials();
 		m_Pipeline = new Pipeline(m_Device->GetDevice(), m_SwapChain->GetRenderPass());
+		auto SceneLayout = m_SceneDescriptorSetLayout->GetDescriptorSetLayout();
+		auto materialLayout = m_Materials["cube"]->DescriptorSetLayout->GetDescriptorSetLayout();
+		std::array<vk::DescriptorSetLayout, 2> setLayouts = { SceneLayout, materialLayout };
 		m_Pipeline->Create(
 			"resources/shaders/default.vert.spv",
 			"resources/shaders/default.frag.spv",
 			Vertex::GetDescriptions(),
-			m_GlobalDescriptorSetLayout->GetDescriptorSetLayout(),
+			static_cast<uint32_t>(setLayouts.size()),
+			setLayouts.data(),
 			sizeof(PushConstantData));
 		SetupMeshes();
 		CreateCommandBuffers();
@@ -71,7 +75,7 @@ void Renderer::Terminate()
 	try
 	{
 		DestroyMeshes();
-		DestroyTextures();
+		DestroyMaterials();
 		m_Pipeline->Terminate();
 		DestroyDescriptors();
 		DestroySyncObjects();
@@ -114,16 +118,33 @@ void Renderer::DestroyMeshes()
 	}
 }
 
-void Renderer::SetupTextures()
+void Renderer::SetupMaterials()
 {
-	m_Texture = std::make_unique<Texture>(*m_Device);
-	m_Texture->LoadFromFile("resources/images/plant.jpg");
+	for (Model* model : m_Models)
+	{
+		Material* material = new Material();
+		material->Texture = std::make_unique<Texture>(*m_Device);
+		material->Texture->LoadFromFile(model->TexturePath);
+		material->DescriptorSetLayout = DescriptorSetLayout::Builder(*m_Device)
+			.AddBinding(0, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
+			.Build();
+
+		DescriptorWriter(*material->DescriptorSetLayout, *m_GlobalDescriptorPool)
+			.WriteImage(0, &material->Texture->DescriptorInfo())
+			.Build(material->DescriptorSet);
+
+		m_Materials.insert({ model->GetName(), material });
+	}
 }
 
-void Renderer::DestroyTextures()
+void Renderer::DestroyMaterials()
 {
-	m_Texture->Destroy();
-	m_Texture.reset();
+	for (std::pair<std::string, Material*> material : m_Materials)
+	{
+		material.second->Texture->Destroy();
+		material.second->Texture.reset();
+		delete material.second;
+	}
 }
 
 void Renderer::RecreateSwapChain()
@@ -137,56 +158,53 @@ void Renderer::RecreateSwapChain()
 
 void Renderer::SetupDescriptors()
 {
-	vk::DeviceSize bufferSize = sizeof(GlobalUBO);
-
-	m_GlobalDescriptorSetLayout = DescriptorSetLayout::Builder(*m_Device)
-		.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex)
-		.AddBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
-		.Build();
+	vk::DeviceSize bufferSize = sizeof(SceneUBO);
 
 	m_GlobalDescriptorPool = DescriptorPool::Builder(*m_Device)
-		.SetMaxSets(MAX_FRAMES_IN_FLIGHT)
+		.SetMaxSets(MAX_FRAMES_IN_FLIGHT * m_Models.size())
 		.AddPoolSize(vk::DescriptorType::eUniformBuffer, MAX_FRAMES_IN_FLIGHT)
-		.AddPoolSize(vk::DescriptorType::eCombinedImageSampler, MAX_FRAMES_IN_FLIGHT)
+		.AddPoolSize(vk::DescriptorType::eCombinedImageSampler, 1)
 		.Build();
 
 	for (uint32_t i = 0; i < m_Frames.size(); i++)
 	{
-		m_Frames[i].GlobalUniformBuffer = std::make_unique<Buffer>(
+		m_Frames[i].SceneUniformBuffer = std::make_unique<Buffer>(
 			*m_Device,
 			bufferSize,
 			1,
 			vk::BufferUsageFlagBits::eUniformBuffer,
 			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
 		);
-		m_Frames[i].GlobalUniformBuffer->Map();
+		m_Frames[i].SceneUniformBuffer->Map();
 
-		vk::DescriptorBufferInfo bufferInfo = m_Frames[i].GlobalUniformBuffer->DescriptorInfo();
-		vk::DescriptorImageInfo imageInfo = m_Texture->DescriptorInfo();
+		vk::DescriptorBufferInfo bufferInfo = m_Frames[i].SceneUniformBuffer->DescriptorInfo();
 
-		DescriptorWriter (*m_GlobalDescriptorSetLayout, *m_GlobalDescriptorPool)
+		DescriptorWriter (*m_SceneDescriptorSetLayout, *m_GlobalDescriptorPool)
 			.WriteBuffer(0, &bufferInfo)
-			.WriteImage(1, &imageInfo)
-			.Build(m_Frames[i].GlobalDescriptorSet);
+			.Build(m_Frames[i].SceneDescriptorSet);
 	}
+
+	m_SceneDescriptorSetLayout = DescriptorSetLayout::Builder(*m_Device)
+		.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex)
+		.Build();
 }
 
 void Renderer::DestroyDescriptors()
 {
 	m_GlobalDescriptorPool.reset();
-	m_GlobalDescriptorSetLayout.reset();
+	m_SceneDescriptorSetLayout.reset();
 
 	for (size_t i = 0; i < m_Frames.size(); i++)
 	{
-		m_Frames[i].GlobalUniformBuffer.reset();
+		m_Frames[i].SceneUniformBuffer.reset();
 	}
 }
 
-void Renderer::UpdateGlobalUBO(uint32_t currentImage)
+void Renderer::UpdateSceneUBO(uint32_t currentImage)
 {
-	GlobalUBO ubo{};
+	SceneUBO ubo{};
 	ubo.ViewProjection = m_Camera.GetProjectionMatrix() * m_Camera.GetViewMatrix();
-	m_Frames[currentImage].GlobalUniformBuffer->WriteToBuffer(&ubo);
+	m_Frames[currentImage].SceneUniformBuffer->WriteToBuffer(&ubo);
 }
 
 void Renderer::CreateCommandBuffers()
@@ -242,17 +260,25 @@ void Renderer::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t ima
 		vk::PipelineBindPoint::eGraphics,
 		m_Pipeline->GetLayout(),
 		0,
-		1, &m_Frames[m_CurrentFrame].GlobalDescriptorSet,
+		1, &m_Frames[m_CurrentFrame].SceneDescriptorSet,
 		0, nullptr);
 
 	for (uint32_t i = 0; i < m_Models.size(); i++)
 	{
 		Mesh* mesh = m_Meshes[m_Models[i]->GetName()];
+		Material* material = m_Materials[m_Models[i]->GetName()];
 		
 		PushConstantData pushConstantData{};
 		pushConstantData.Model = m_Models[i]->GetModelMatrix();
 		pushConstantData.Normal = m_Models[i]->GetNormalMatrix();
 		commandBuffer.pushConstants(m_Pipeline->GetLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstantData), &pushConstantData);
+
+		commandBuffer.bindDescriptorSets(
+			vk::PipelineBindPoint::eGraphics,
+			m_Pipeline->GetLayout(),
+			1,
+			1, &material->DescriptorSet,
+			0, nullptr);
 
 		mesh->Bind(commandBuffer);
 		if(mesh->IsIndexed())
@@ -309,7 +335,7 @@ void Renderer::DrawFrame()
 	if (currentBuffer.result != vk::Result::eSuccess)
 		throw std::runtime_error("Failed to acquire swap chain image");
 
-	UpdateGlobalUBO(m_CurrentFrame);
+	UpdateSceneUBO(m_CurrentFrame);
 
 	while (vk::Result::eTimeout == m_Device->GetDevice().resetFences(1, &m_Frames[m_CurrentFrame].RenderFence));
 	m_Frames[m_CurrentFrame].CommandBuffer.reset(vk::CommandBufferResetFlagBits::eReleaseResources);

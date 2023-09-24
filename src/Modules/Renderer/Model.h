@@ -9,7 +9,7 @@ class Model
 {
 public:
     Model() = default;
-    Model(std::string name, const MeshData& meshData);
+    Model(std::string name, const MeshData& meshData, std::string texturePath);
     ~Model();
 
     glm::vec3 Position = glm::vec3(0.0f);
@@ -23,6 +23,8 @@ public:
     glm::mat4 GetNormalMatrix() const;
     MeshData GetMeshData() const { return m_MeshData; }
     std::string GetName() const { return m_Name; }
+    
+    std::string TexturePath;
 
 private:
     std::string m_Name;

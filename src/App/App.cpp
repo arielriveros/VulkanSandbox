@@ -27,13 +27,13 @@ void App::Init()
 	m_Camera.Position.z = 3.0f;
 	m_Camera.Rotation.x = -45.0f;
 
-	Model* cube = new Model("cube", MeshData::Cube());
+	Model* cube = new Model("cube", MeshData::Cube(), "resources/assets/images/plant.jpg");
 	m_Models.push_back(cube);
-	Model* sphere = new Model("sphere", MeshData::Sphere(18));
+	Model* sphere = new Model("sphere", MeshData::Sphere(), "resources/assets/images/grass.jpg");
 	sphere->Position.x = -1.0f;
 	sphere->Position.z = -1.0f;
 	m_Models.push_back(sphere);
-	Model* pyramid = new Model("pyramid", MeshData::Pyramid());
+	Model* pyramid = new Model("pyramid", MeshData::Pyramid(), "resources/assets/images/bricks.jpg");
 	pyramid->Position.x = 1.0f;
 	pyramid->Position.z = -1.0f;
 	m_Models.push_back(pyramid);

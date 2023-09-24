@@ -16,13 +16,12 @@ void Texture::LoadFromFile(const std::string &filename)
 {
     int textureWidth, textureHeight, textureChannels;
     stbi_uc* pixels = stbi_load(
-		"resources/assets/images/plant.jpg",
+		filename.c_str(),
 		&textureWidth,
 		&textureHeight,
 		&textureChannels,
 		STBI_rgb_alpha
 	);
-	vk::DeviceSize imageSize = textureWidth * textureHeight * 4;
 
     if (!pixels)
         throw std::runtime_error("Failed to load texture image");

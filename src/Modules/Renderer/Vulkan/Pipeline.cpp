@@ -10,7 +10,8 @@ void Pipeline::Create(
 	const std::string &vertexSource,
 	const std::string &fragmentSource,
 	VertexDescriptions descriptions,
-	vk::DescriptorSetLayout descriptorSetLayout,
+	uint32_t setLayoutCount,
+	const vk::DescriptorSetLayout* setLayouts,
 	uint32_t pushConstantRangeSize
 	)
 {
@@ -122,7 +123,7 @@ void Pipeline::Create(
 
 	vk::PipelineLayoutCreateInfo pipelineLayoutInfo(
 		vk::PipelineLayoutCreateFlags(),
-		1, &descriptorSetLayout,
+		setLayoutCount, setLayouts,
 		1, &pushConstantRange
 	);
 
@@ -153,7 +154,7 @@ void Pipeline::Create(
 	if (result != vk::Result::eSuccess)
 		throw std::runtime_error("Failed to create graphics pipeline");
 
-	m_DescriptorSetLayout = descriptorSetLayout;
+	//m_DescriptorSetLayouts = std::vector<vk::DescriptorSetLayout>(descriptorSetLayouts, descriptorSetLayouts + 2);
 	m_Pipeline = pipeline;
 
 	m_Device.destroyShaderModule(vertShaderModule);
