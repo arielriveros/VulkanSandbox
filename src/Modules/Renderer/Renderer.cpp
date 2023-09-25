@@ -201,7 +201,9 @@ void Renderer::UpdateSceneUBO(uint32_t currentImage)
 {
 	SceneUBO ubo{};
 	ubo.ViewProjection = m_Camera.GetProjectionMatrix() * m_Camera.GetViewMatrix();
+	ubo.CameraPosition = glm::vec4(m_Camera.Position, 1.0f);
 	ubo.DirectionalLightPosition = glm::vec4(m_DirectionalLight->Position, m_DirectionalLight->Intensity);
+	ubo.DirectionalLightColor = glm::vec4(m_DirectionalLight->Color, m_DirectionalLight->AmbientIntensity);
 	m_Frames[currentImage].SceneUniformBuffer->WriteToBuffer(&ubo);
 }
 

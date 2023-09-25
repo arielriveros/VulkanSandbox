@@ -21,6 +21,7 @@ struct MeshData
 	std::vector<uint16_t> Indices;
 
 	static MeshData Triangle();
+	static MeshData Quad();
 	static MeshData Cube();
 	static MeshData Pyramid();
 	static MeshData Sphere(uint32_t definition = 36);

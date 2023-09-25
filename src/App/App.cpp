@@ -27,7 +27,7 @@ void App::Init()
 	m_Camera.Position.z = 3.0f;
 	m_Camera.Rotation.x = -45.0f;
 
-	Model* cube = new Model("cube", MeshData::Cube(), {{{0.0f, 0.0f, 1.0f, 1.0f}}});
+	Model* cube = new Model("cube", MeshData::Cube(), {{{0.0f, 0.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 32.0f}}});
 	m_Models.push_back(cube);
 	Model* sphere = new Model("sphere", MeshData::Sphere(), {{{1.0f, 0.0f, 1.0f, 1.0f}}, "resources/assets/images/grass.jpg"});
 	sphere->Position.x = -1.0f;
@@ -37,6 +37,11 @@ void App::Init()
 	pyramid->Position.x = 1.0f;
 	pyramid->Position.z = -1.0f;
 	m_Models.push_back(pyramid);
+	Model* floor = new Model("floor", MeshData::Quad(), {{{1.0f, 1.0f, 1.0f, 1.0f}}, "resources/assets/images/bricks.jpg"});
+	floor->Position.y = -1.0f;
+	floor->Rotation.x = -90.0f;
+	floor->Scale = { 10.0f, 10.0f, 10.0f };
+	m_Models.push_back(floor);
 
 	m_DirLight = DirectionalLight({ 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, 1.0f);
 
@@ -153,7 +158,7 @@ void App::OnMouseMoveCallback(float xPos, float yPos, float xOffset, float yOffs
 		m_Models[0]->Rotation.x -= yOffset;
 	}
 
-	m_Models[0]->GetMaterialParameters().Parameters.BaseColor.x = xPos / m_Window.Width;
-	m_Models[0]->GetMaterialParameters().Parameters.BaseColor.y = yPos / m_Window.Height;
-	m_Models[0]->GetMaterialParameters().Parameters.BaseColor.z = (xPos + yPos) / m_Window.Width + m_Window.Height;
+	m_Models[0]->GetMaterialParameters().Parameters.AmbientColor.x = xPos / m_Window.Width;
+	m_Models[0]->GetMaterialParameters().Parameters.AmbientColor.y = yPos / m_Window.Height;
+	m_Models[0]->GetMaterialParameters().Parameters.AmbientColor.z = (xPos + yPos) / m_Window.Width + m_Window.Height;
 }

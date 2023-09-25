@@ -10,7 +10,9 @@
 #include "Texture.h"
 
 struct MaterialParameters {
-	glm::vec4 BaseColor = glm::vec4(1.0f);
+	glm::vec4 DiffuseColor = glm::vec4(1.0f);
+	glm::vec4 SpecularColor = glm::vec4(1.0f, 1.0f, 1.0f, 32.0f); // w = shininess
+	glm::vec4 AmbientColor = glm::vec4(1.0f);
 };
 
 struct MaterialData {

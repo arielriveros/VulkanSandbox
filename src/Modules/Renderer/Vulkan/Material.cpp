@@ -38,6 +38,8 @@ void Material::Create(MaterialData& parameters)
 void Material::UpdateUniformBuffer(MaterialData& parameters)
 {
     MaterialParameters ubo{};
-	ubo.BaseColor = parameters.Parameters.BaseColor;
+    ubo.DiffuseColor = parameters.Parameters.DiffuseColor;
+    ubo.SpecularColor = parameters.Parameters.SpecularColor;
+    ubo.AmbientColor = parameters.Parameters.AmbientColor;
 	MaterialUniformBuffer->WriteToBuffer(&ubo);
 }

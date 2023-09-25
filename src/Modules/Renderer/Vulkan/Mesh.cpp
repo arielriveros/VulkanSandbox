@@ -53,6 +53,19 @@ MeshData MeshData::Triangle()
 	return triangle;
 }
 
+MeshData MeshData::Quad()
+{
+	MeshData quad = {};
+	quad.Vertices = {
+		{{-0.5f, -0.5f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+		{{ 0.5f, -0.5f, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+		{{ 0.5f,  0.5f, 0.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+		{{-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}}
+	};
+	quad.Indices = {0, 1, 2, 2, 3, 0};
+	return quad;
+}
+
 MeshData MeshData::Cube()
 {
 	MeshData cube = {};
