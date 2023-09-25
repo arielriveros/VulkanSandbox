@@ -3,13 +3,14 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "Vulkan/Mesh.h"
+#include "Vulkan/Material.h"
 #include <string>
 
 class Model
 {
 public:
     Model() = default;
-    Model(std::string name, const MeshData& meshData, std::string texturePath);
+    Model(std::string name, const MeshData& meshData, MaterialData material);
     ~Model();
 
     glm::vec3 Position = glm::vec3(0.0f);
@@ -22,11 +23,12 @@ public:
     glm::mat4 GetModelMatrix() const;
     glm::mat4 GetNormalMatrix() const;
     MeshData GetMeshData() const { return m_MeshData; }
+    MaterialData GetMaterialParameters() const { return m_Material; }
+    void SetMaterialParameters(MaterialData material) { m_Material = material; }
     std::string GetName() const { return m_Name; }
-    
-    std::string TexturePath;
 
 private:
     std::string m_Name;
     MeshData m_MeshData;
+    MaterialData m_Material;
 };

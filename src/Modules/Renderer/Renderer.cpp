@@ -122,15 +122,17 @@ void Renderer::SetupMaterials()
 {
 	for (Model* model : m_Models)
 	{
-		Material* material = new Material();
-		material->Texture = std::make_unique<Texture>(*m_Device);
-		material->Texture->LoadFromFile(model->TexturePath);
+		Material* material = new Material(*m_Device);
+		material->Create(model->GetMaterialParameters());
+		
 		material->DescriptorSetLayout = DescriptorSetLayout::Builder(*m_Device)
-			.AddBinding(0, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
+			.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
+			.AddBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
 			.Build();
 
 		DescriptorWriter(*material->DescriptorSetLayout, *m_GlobalDescriptorPool)
-			.WriteImage(0, &material->Texture->DescriptorInfo())
+			.WriteBuffer(0, &material->MaterialUniformBuffer->DescriptorInfo())
+			.WriteImage(1, &material->BaseTexture->DescriptorInfo())
 			.Build(material->DescriptorSet);
 
 		m_Materials.insert({ model->GetName(), material });
@@ -141,8 +143,6 @@ void Renderer::DestroyMaterials()
 {
 	for (std::pair<std::string, Material*> material : m_Materials)
 	{
-		material.second->Texture->Destroy();
-		material.second->Texture.reset();
 		delete material.second;
 	}
 }
@@ -159,6 +159,10 @@ void Renderer::RecreateSwapChain()
 void Renderer::SetupDescriptors()
 {
 	vk::DeviceSize bufferSize = sizeof(SceneUBO);
+
+	m_SceneDescriptorSetLayout = DescriptorSetLayout::Builder(*m_Device)
+		.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex)
+		.Build();
 
 	m_GlobalDescriptorPool = DescriptorPool::Builder(*m_Device)
 		.SetMaxSets(MAX_FRAMES_IN_FLIGHT * m_Models.size())
@@ -183,10 +187,6 @@ void Renderer::SetupDescriptors()
 			.WriteBuffer(0, &bufferInfo)
 			.Build(m_Frames[i].SceneDescriptorSet);
 	}
-
-	m_SceneDescriptorSetLayout = DescriptorSetLayout::Builder(*m_Device)
-		.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex)
-		.Build();
 }
 
 void Renderer::DestroyDescriptors()
@@ -272,6 +272,8 @@ void Renderer::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t ima
 		pushConstantData.Model = m_Models[i]->GetModelMatrix();
 		pushConstantData.Normal = m_Models[i]->GetNormalMatrix();
 		commandBuffer.pushConstants(m_Pipeline->GetLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstantData), &pushConstantData);
+
+		material->UpdateUniformBuffer(m_Models[i]->GetMaterialParameters());
 
 		commandBuffer.bindDescriptorSets(
 			vk::PipelineBindPoint::eGraphics,

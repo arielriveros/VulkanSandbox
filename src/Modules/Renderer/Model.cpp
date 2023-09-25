@@ -1,7 +1,7 @@
 #include "Model.h"
 
-Model::Model(std::string name, const MeshData& meshData, std::string texturePath)
-    : m_Name(name), m_MeshData(meshData), TexturePath(texturePath)
+Model::Model(std::string name, const MeshData& meshData, MaterialData material)
+    : m_Name(name), m_MeshData(meshData), m_Material(material)
 {
 }
 

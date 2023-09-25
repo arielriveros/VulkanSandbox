@@ -43,12 +43,6 @@ struct FrameData {
 	vk::DescriptorSet SceneDescriptorSet;
 };
 
-struct Material {
-	std::unique_ptr<Texture> Texture;
-	vk::DescriptorSet DescriptorSet;
-	std::unique_ptr<DescriptorSetLayout> DescriptorSetLayout{};
-};
-
 class Renderer: public IModule
 {
 public:
