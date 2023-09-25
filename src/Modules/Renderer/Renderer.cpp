@@ -14,33 +14,19 @@ Renderer::Renderer(Window& window, Camera& camera, std::vector<Model*> models)
 Renderer::~Renderer()
 {
 	std::cout << "Renderer Destructor" << std::endl;
-	
-	delete m_SwapChain;
-	delete m_Pipeline;
-	delete m_Device;
 }
 
 void Renderer::Initialize()
 {
 	try
 	{
-		m_Device = new Device(m_Window);
+		m_Device = std::make_unique<Device>(m_Window);
 		m_Device->Initialize();
-		m_SwapChain = new SwapChain(*m_Device, m_Window);
+		m_SwapChain = std::make_unique<SwapChain>(*m_Device, m_Window);
 		m_SwapChain->Initialize();
 		SetupDescriptors();
 		SetupMaterials();
-		m_Pipeline = new Pipeline(m_Device->GetDevice(), m_SwapChain->GetRenderPass());
-		auto SceneLayout = m_SceneDescriptorSetLayout->GetDescriptorSetLayout();
-		auto materialLayout = m_Materials["cube"]->DescriptorSetLayout->GetDescriptorSetLayout();
-		std::array<vk::DescriptorSetLayout, 2> setLayouts = { SceneLayout, materialLayout };
-		m_Pipeline->Create(
-			"resources/shaders/default.vert.spv",
-			"resources/shaders/default.frag.spv",
-			Vertex::GetDescriptions(),
-			static_cast<uint32_t>(setLayouts.size()),
-			setLayouts.data(),
-			sizeof(PushConstantData));
+		SetupPipelines();
 		SetupMeshes();
 		CreateCommandBuffers();
 		CreateSyncObjects();
@@ -76,7 +62,7 @@ void Renderer::Terminate()
 	{
 		DestroyMeshes();
 		DestroyMaterials();
-		m_Pipeline->Terminate();
+		DestroyPipelines();
 		DestroyDescriptors();
 		DestroySyncObjects();
 		m_SwapChain->Terminate();
@@ -147,15 +133,6 @@ void Renderer::DestroyMaterials()
 	}
 }
 
-void Renderer::RecreateSwapChain()
-{
-	while (m_Width == 0 || m_Height == 0)
-		glfwWaitEvents();
-
-	m_Device->WaitIdle();
-	m_SwapChain->Recreate();
-}
-
 void Renderer::SetupDescriptors()
 {
 	vk::DeviceSize bufferSize = sizeof(SceneUBO);
@@ -195,9 +172,27 @@ void Renderer::DestroyDescriptors()
 	m_SceneDescriptorSetLayout.reset();
 
 	for (size_t i = 0; i < m_Frames.size(); i++)
-	{
 		m_Frames[i].SceneUniformBuffer.reset();
-	}
+}
+
+void Renderer::SetupPipelines()
+{
+	m_Pipeline = std::make_unique<Pipeline>(m_Device->GetDevice(), m_SwapChain->GetRenderPass()); // new Pipeline(m_Device->GetDevice(), m_SwapChain->GetRenderPass());
+	auto SceneLayout = m_SceneDescriptorSetLayout->GetDescriptorSetLayout();
+	auto materialLayout = m_Materials["cube"]->DescriptorSetLayout->GetDescriptorSetLayout();
+	std::array<vk::DescriptorSetLayout, 2> setLayouts = { SceneLayout, materialLayout };
+	m_Pipeline->Create(
+		"resources/shaders/default.vert.spv",
+		"resources/shaders/default.frag.spv",
+		Vertex::GetDescriptions(),
+		static_cast<uint32_t>(setLayouts.size()),
+		setLayouts.data(),
+		sizeof(PushConstantData));
+}
+
+void Renderer::DestroyPipelines()
+{
+	m_Pipeline->Terminate();
 }
 
 void Renderer::UpdateSceneUBO(uint32_t currentImage)
@@ -219,41 +214,37 @@ void Renderer::CreateCommandBuffers()
 	}
 }
 
-void Renderer::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex)
+void Renderer::CreateSyncObjects()
 {
-	vk::CommandBufferBeginInfo beginInfo(
-		vk::CommandBufferUsageFlagBits::eSimultaneousUse,
-		nullptr
-	);
+	vk::FenceCreateInfo fenceInfo(vk::FenceCreateFlagBits::eSignaled);
 
-	commandBuffer.begin(beginInfo);
-	
-	const vk::ClearValue clearValues[2]{
-		{vk::ClearColorValue(std::array<float, 4>{.05f, 0.f, .05f, 1.f})},
-		{vk::ClearDepthStencilValue(1.f, 0)}
-	};
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		m_Frames[i].RenderSemaphore = m_Device->GetDevice().createSemaphore(vk::SemaphoreCreateInfo());
+		m_Frames[i].PresentSemaphore = m_Device->GetDevice().createSemaphore(vk::SemaphoreCreateInfo());
+		m_Frames[i].RenderFence = m_Device->GetDevice().createFence(fenceInfo);
 
-	vk::RenderPassBeginInfo renderPassInfo(
-		m_SwapChain->GetRenderPass(),
-		m_SwapChain->GetFramebuffer(imageIndex),
-		vk::Rect2D( vk::Offset2D( 0, 0 ), m_SwapChain->GetExtent() ),
-		2, clearValues
-	);
+		if (!m_Frames[i].RenderSemaphore || !m_Frames[i].PresentSemaphore || !m_Frames[i].RenderFence)
+			throw std::runtime_error("Failed to create sync objects");
+	}
+}
 
-	commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+void Renderer::DestroySyncObjects()
+{
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		m_Device->GetDevice().destroyFence(m_Frames[i].RenderFence);
+		m_Device->GetDevice().destroySemaphore(m_Frames[i].RenderSemaphore);
+		m_Device->GetDevice().destroySemaphore(m_Frames[i].PresentSemaphore);
+	}
+}
 
-	vk::Viewport viewport(
-		0.0f,
-		0.0f,
-		static_cast<float>(m_SwapChain->GetExtent().width),
-		static_cast<float>(m_SwapChain->GetExtent().height),
-		0.0f,
-		1.0f
-	);
-	commandBuffer.setViewport(0, 1, &viewport);
+void Renderer::DrawFrame()
+{
+	vk::CommandBuffer& commandBuffer = m_Frames[m_CurrentFrame].CommandBuffer;
+	uint32_t currentBuffer{};
 
-	vk::Rect2D scissor(vk::Offset2D(0, 0), m_SwapChain->GetExtent());
-	commandBuffer.setScissor(0, 1, &scissor);
+	BeginFrame(currentBuffer);
 
 	UpdateSceneUBO(m_CurrentFrame);
 	m_Pipeline->Bind(commandBuffer);
@@ -291,40 +282,18 @@ void Renderer::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t ima
 			commandBuffer.draw(mesh->GetVertexSize(), 1, 0, 0);
 	}
 
-	commandBuffer.endRenderPass();
-	commandBuffer.end();
+	EndFrame(currentBuffer);
 }
 
-void Renderer::CreateSyncObjects()
-{
-	vk::FenceCreateInfo fenceInfo(vk::FenceCreateFlagBits::eSignaled);
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		m_Frames[i].RenderSemaphore = m_Device->GetDevice().createSemaphore(vk::SemaphoreCreateInfo());
-		m_Frames[i].PresentSemaphore = m_Device->GetDevice().createSemaphore(vk::SemaphoreCreateInfo());
-		m_Frames[i].RenderFence = m_Device->GetDevice().createFence(fenceInfo);
-
-		if (!m_Frames[i].RenderSemaphore || !m_Frames[i].PresentSemaphore || !m_Frames[i].RenderFence)
-			throw std::runtime_error("Failed to create sync objects");
-	}
-}
-
-void Renderer::DestroySyncObjects()
-{
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		m_Device->GetDevice().destroyFence(m_Frames[i].RenderFence);
-		m_Device->GetDevice().destroySemaphore(m_Frames[i].RenderSemaphore);
-		m_Device->GetDevice().destroySemaphore(m_Frames[i].PresentSemaphore);
-	}
-}
-
-void Renderer::DrawFrame()
+void Renderer::BeginFrame(uint32_t &imageIndex)
 {
 	if (m_FramebufferResized)
 	{
-		RecreateSwapChain();
+		while (m_Width == 0 || m_Height == 0)
+			glfwWaitEvents();
+
+		m_Device->WaitIdle();
+		m_SwapChain->Recreate();
 		m_FramebufferResized = false;
 	}
 
@@ -338,10 +307,50 @@ void Renderer::DrawFrame()
 	if (currentBuffer.result != vk::Result::eSuccess)
 		throw std::runtime_error("Failed to acquire swap chain image");
 
+	imageIndex = currentBuffer.value;
+
 	while (vk::Result::eTimeout == m_Device->GetDevice().resetFences(1, &m_Frames[m_CurrentFrame].RenderFence));
 	m_Frames[m_CurrentFrame].CommandBuffer.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
 
-	RecordCommandBuffer(m_Frames[m_CurrentFrame].CommandBuffer, currentBuffer.value);
+	vk::CommandBufferBeginInfo beginInfo(
+		vk::CommandBufferUsageFlagBits::eSimultaneousUse,
+		nullptr
+	);
+
+	m_Frames[m_CurrentFrame].CommandBuffer.begin(beginInfo);
+	
+	const vk::ClearValue clearValues[2]{
+		{vk::ClearColorValue(std::array<float, 4>{.05f, 0.f, .05f, 1.f})},
+		{vk::ClearDepthStencilValue(1.f, 0)}
+	};
+
+	vk::RenderPassBeginInfo renderPassInfo(
+		m_SwapChain->GetRenderPass(),
+		m_SwapChain->GetFramebuffer(imageIndex),
+		vk::Rect2D( vk::Offset2D( 0, 0 ), m_SwapChain->GetExtent() ),
+		2, clearValues
+	);
+
+	m_Frames[m_CurrentFrame].CommandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+
+	vk::Viewport viewport(
+		0.0f,
+		0.0f,
+		static_cast<float>(m_SwapChain->GetExtent().width),
+		static_cast<float>(m_SwapChain->GetExtent().height),
+		0.0f,
+		1.0f
+	);
+	m_Frames[m_CurrentFrame].CommandBuffer.setViewport(0, 1, &viewport);
+
+	vk::Rect2D scissor(vk::Offset2D(0, 0), m_SwapChain->GetExtent());
+	m_Frames[m_CurrentFrame].CommandBuffer.setScissor(0, 1, &scissor);
+}
+
+void Renderer::EndFrame(uint32_t &imageIndex)
+{
+	m_Frames[m_CurrentFrame].CommandBuffer.endRenderPass();
+	m_Frames[m_CurrentFrame].CommandBuffer.end();
 
 	vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
 
@@ -359,7 +368,7 @@ void Renderer::DrawFrame()
 	vk::Result queuePresentResult = m_Device->GetPresentQueue().presentKHR(
 		vk::PresentInfoKHR(1, &m_Frames[m_CurrentFrame].RenderSemaphore,
 						   1, &m_SwapChain->GetSwapChain(),
-						   &currentBuffer.value)
+						   &imageIndex)
 	);
 	if (queuePresentResult != vk::Result::eSuccess)
 		throw std::runtime_error("Failed to present swap chain image");

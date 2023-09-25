@@ -62,18 +62,19 @@ private:
 	void SetupMaterials();
 	void DestroyMaterials();
 
-	void RecreateSwapChain();
-
 	void SetupDescriptors();
 	void DestroyDescriptors();
+
+	void SetupPipelines();
+	void DestroyPipelines();
 	void UpdateSceneUBO(uint32_t currentImage);
 
 	void CreateCommandBuffers();
-	void RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex);
-
 	void CreateSyncObjects();
 	void DestroySyncObjects();
 
+	void BeginFrame(uint32_t& imageIndex);
+	void EndFrame(uint32_t& imageIndex);
 	void DrawFrame();
 
 private:
@@ -84,9 +85,9 @@ private:
 	Camera& m_Camera;
 	std::vector<Model*> m_Models;
 
-	Device* m_Device;
-	Pipeline* m_Pipeline;
-	SwapChain* m_SwapChain;
+	std::unique_ptr<Device> m_Device;
+	std::unique_ptr<Pipeline> m_Pipeline;
+	std::unique_ptr<SwapChain> m_SwapChain;
 
 	std::unordered_map<std::string, Mesh*> m_Meshes;
 	std::unordered_map<std::string, Material*> m_Materials;
