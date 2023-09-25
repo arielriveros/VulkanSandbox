@@ -4,7 +4,9 @@
 
 
 Renderer::Renderer(Window& window, Camera& camera, std::vector<Model*> models)
-	: m_Window{ window }, m_Camera{ camera }, m_Models{ models }
+	: m_Window{ window },
+	  m_Camera{ camera },
+	  m_Models{ models }
 {
 	std::cout << "Renderer Constructor" << std::endl;
 	Resize(m_Window.Width, m_Window.Height);
@@ -138,7 +140,7 @@ void Renderer::SetupDescriptors()
 	vk::DeviceSize bufferSize = sizeof(SceneUBO);
 
 	m_SceneDescriptorSetLayout = DescriptorSetLayout::Builder(*m_Device)
-		.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex)
+		.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment)
 		.Build();
 
 	m_GlobalDescriptorPool = DescriptorPool::Builder(*m_Device)
@@ -199,6 +201,7 @@ void Renderer::UpdateSceneUBO(uint32_t currentImage)
 {
 	SceneUBO ubo{};
 	ubo.ViewProjection = m_Camera.GetProjectionMatrix() * m_Camera.GetViewMatrix();
+	ubo.DirectionalLightPosition = glm::vec4(m_DirectionalLight->Position, m_DirectionalLight->Intensity);
 	m_Frames[currentImage].SceneUniformBuffer->WriteToBuffer(&ubo);
 }
 

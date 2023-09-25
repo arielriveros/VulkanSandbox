@@ -6,6 +6,7 @@
 #include "../Modules/Renderer/Camera.h"
 #include "../Modules/Renderer/Model.h"
 #include "../Modules/Renderer/Renderer.h"
+#include "../Modules/Renderer/Lighting/DirectionalLight.h"
 
 class App
 {
@@ -24,5 +25,6 @@ private:
 	std::unique_ptr<Renderer> m_Renderer;
 	Camera m_Camera;
 	std::vector<Model*> m_Models;
+	DirectionalLight m_DirLight;
 	Window m_Window{ "App", 800, 600 };
 };
