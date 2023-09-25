@@ -255,6 +255,7 @@ void Renderer::RecordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t ima
 	vk::Rect2D scissor(vk::Offset2D(0, 0), m_SwapChain->GetExtent());
 	commandBuffer.setScissor(0, 1, &scissor);
 
+	UpdateSceneUBO(m_CurrentFrame);
 	m_Pipeline->Bind(commandBuffer);
 	commandBuffer.bindDescriptorSets(
 		vk::PipelineBindPoint::eGraphics,
@@ -337,8 +338,6 @@ void Renderer::DrawFrame()
 	if (currentBuffer.result != vk::Result::eSuccess)
 		throw std::runtime_error("Failed to acquire swap chain image");
 
-	UpdateSceneUBO(m_CurrentFrame);
-
 	while (vk::Result::eTimeout == m_Device->GetDevice().resetFences(1, &m_Frames[m_CurrentFrame].RenderFence));
 	m_Frames[m_CurrentFrame].CommandBuffer.reset(vk::CommandBufferResetFlagBits::eReleaseResources);
 
@@ -357,13 +356,11 @@ void Renderer::DrawFrame()
 	if(queueSubmitResult != vk::Result::eSuccess)
 		throw std::runtime_error("Failed to submit draw command buffer");
 
-	vk::PresentInfoKHR presentInfo(
-		1, &m_Frames[m_CurrentFrame].RenderSemaphore,
-		1, &m_SwapChain->GetSwapChain(),
-		&currentBuffer.value
+	vk::Result queuePresentResult = m_Device->GetPresentQueue().presentKHR(
+		vk::PresentInfoKHR(1, &m_Frames[m_CurrentFrame].RenderSemaphore,
+						   1, &m_SwapChain->GetSwapChain(),
+						   &currentBuffer.value)
 	);
-
-	vk::Result queuePresentResult = m_Device->GetPresentQueue().presentKHR(presentInfo);
 	if (queuePresentResult != vk::Result::eSuccess)
 		throw std::runtime_error("Failed to present swap chain image");
 

@@ -25,6 +25,7 @@ add_subdirectory(src)
 
 set_target_properties(VulkanSandbox PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG "${PROJECT_BINARY_DIR}/bin/Debug")
 set_target_properties(VulkanSandbox PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE "${PROJECT_BINARY_DIR}/bin/Release")
+set_target_properties(VulkanSandbox PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${PROJECT_BINARY_DIR}/bin/RelWithDebInfo")
 
 ###################### Shaders ######################
 add_custom_target(CopyCompiledShaders ALL

@@ -132,9 +132,7 @@ void App::OnMouseMoveCallback(float xPos, float yPos, float xOffset, float yOffs
 		m_Models[0]->Rotation.x -= yOffset;
 	}
 
-	auto& materialParams = m_Models[0]->GetMaterialParameters();
-	materialParams.Parameters.BaseColor.x = xPos / m_Window.Width;
-	materialParams.Parameters.BaseColor.y = yPos / m_Window.Height;
-	materialParams.Parameters.BaseColor.z = (xPos + yPos) / m_Window.Width + m_Window.Height;
-	m_Models[0]->SetMaterialParameters(materialParams);
+	m_Models[0]->GetMaterialParameters().Parameters.BaseColor.x = xPos / m_Window.Width;
+	m_Models[0]->GetMaterialParameters().Parameters.BaseColor.y = yPos / m_Window.Height;
+	m_Models[0]->GetMaterialParameters().Parameters.BaseColor.z = (xPos + yPos) / m_Window.Width + m_Window.Height;
 }

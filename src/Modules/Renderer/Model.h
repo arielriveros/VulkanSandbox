@@ -23,7 +23,7 @@ public:
     glm::mat4 GetModelMatrix() const;
     glm::mat4 GetNormalMatrix() const;
     MeshData GetMeshData() const { return m_MeshData; }
-    MaterialData GetMaterialParameters() const { return m_Material; }
+    MaterialData& GetMaterialParameters() { return m_Material; }
     void SetMaterialParameters(MaterialData material) { m_Material = material; }
     std::string GetName() const { return m_Name; }
 
