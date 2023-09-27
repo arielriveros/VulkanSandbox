@@ -366,10 +366,15 @@ void Renderer::InitImGui()
 
 void Renderer::DrawImGui()
 {
-	ImGui::Begin("Directional Light");
-	ImGui::SliderFloat("Intensity", &m_DirectionalLight->Intensity, 0.f, 1.f);
-	ImGui::SliderFloat("Ambient Intensity", &m_DirectionalLight->AmbientIntensity, 0.f, 1.f);
-	ImGui::ColorEdit3("Light Color", (float*)&m_DirectionalLight->Color, ImGuiColorEditFlags_NoInputs);
+	ImGui::Begin("Scene");
+	if (ImGui::CollapsingHeader("Lighting"))
+	{
+		m_DirectionalLight->OnGUI();
+	}
+
+	if (ImGui::CollapsingHeader("Models"))
+		for (Model* model : m_Models)
+			model->OnGUI();
 
 	ImGui::End();
 

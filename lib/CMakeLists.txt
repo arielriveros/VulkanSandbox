@@ -9,11 +9,13 @@ add_library(imgui STATIC
     "imgui/imgui_tables.cpp"
     "imgui/backends/imgui_impl_glfw.cpp"
     "imgui/backends/imgui_impl_vulkan.cpp"
+    "imgui/misc/cpp/imgui_stdlib.cpp"
 )
 
 target_include_directories(imgui PUBLIC
     "imgui"
     "imgui/backends"
+    "imgui/misc/cpp"
     "glfw/include"
     "${Vulkan_INCLUDE_DIRS}"
 )

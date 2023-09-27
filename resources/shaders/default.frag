@@ -35,7 +35,7 @@ void main() {
     // Calculate the specular term
     vec3 viewDir = normalize(vec3(scene.cameraPos - fragPos));
     vec3 halfwayDir = normalize(lightDir + viewDir); 
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
+    float spec = pow(max(dot(normal, halfwayDir), 0.0), material.specular.a);
     vec4 specularColor = scene.dirLightColor * spec * material.specular;
 
     // Calculate the ambient term

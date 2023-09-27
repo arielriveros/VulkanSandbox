@@ -109,18 +109,6 @@ void App::HandleInput()
 	if (m_Window.IsKeyPressed(Keyboard::Key::Q))
 		m_Camera.Position.y -= delta;
 
-	if (m_Window.IsKeyPressed(Keyboard::Key::Up))
-		m_Models[0]->Position.z -= delta;
-
-	if (m_Window.IsKeyPressed(Keyboard::Key::Down))
-		m_Models[0]->Position.z += delta;
-
-	if (m_Window.IsKeyPressed(Keyboard::Key::Left))
-		m_Models[0]->Position.x -= delta;
-
-	if (m_Window.IsKeyPressed(Keyboard::Key::Right))
-		m_Models[0]->Position.x += delta;
-
 	if (m_Window.IsKeyPressed(Keyboard::Key::Home))
 		m_DirLight.Position.y += delta;
 
@@ -151,14 +139,4 @@ void App::OnMouseMoveCallback(float xPos, float yPos, float xOffset, float yOffs
 		m_Camera.Rotation.x += yOffset * 0.25f;
 		m_Camera.UpdateRotation();
 	}
-
-	if (m_Window.IsMouseButtonPressed(Mouse::Button::Left))
-	{
-		m_Models[0]->Rotation.y += xOffset;
-		m_Models[0]->Rotation.x -= yOffset;
-	}
-
-	m_Models[0]->GetMaterialParameters().Parameters.AmbientColor.x = xPos / m_Window.Width;
-	m_Models[0]->GetMaterialParameters().Parameters.AmbientColor.y = yPos / m_Window.Height;
-	m_Models[0]->GetMaterialParameters().Parameters.AmbientColor.z = (xPos + yPos) / m_Window.Width + m_Window.Height;
 }

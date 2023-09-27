@@ -31,4 +31,8 @@ private:
     std::string m_Name;
     MeshData m_MeshData;
     MaterialData m_Material;
+
+    void OnGUI();
+
+    friend class Renderer;
 };
