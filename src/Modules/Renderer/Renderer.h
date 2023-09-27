@@ -8,6 +8,8 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#define IMGUI_ENABLE_PROFILER
+#include <imgui.h>
 #include "Lighting/DirectionalLight.h"
 #include "Vulkan/Buffer.h"
 #include "Vulkan/Descriptor.h"
@@ -83,6 +85,10 @@ private:
 	void EndFrame(uint32_t& imageIndex);
 	void DrawFrame();
 
+	void InitImGui();
+	void DrawImGui();
+	void DestroyImGui();
+
 private:
 	uint32_t m_Width, m_Height;
 	bool m_FramebufferResized = false;
@@ -104,4 +110,6 @@ private:
 
 	std::unique_ptr<DescriptorPool> m_GlobalDescriptorPool{};
 	std::unique_ptr<DescriptorSetLayout> m_SceneDescriptorSetLayout{};
+
+	vk::DescriptorPool m_ImguiPool;
 };

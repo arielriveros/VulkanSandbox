@@ -23,6 +23,7 @@ public:
 	vk::Extent2D GetExtent() const { return m_Extent; }
 	vk::RenderPass GetRenderPass() const { return m_RenderPass; }
 	vk::Framebuffer GetFramebuffer(uint32_t index) const { return m_Framebuffers[index]; }
+	vk::PresentModeKHR GetPresentMode() const { return m_PresentMode; }
 
 private:
 	void CreateSwapChain();
@@ -51,6 +52,8 @@ private:
 	std::vector<vk::Framebuffer> m_Framebuffers;
 	vk::Format m_ImageFormat;
 	vk::Extent2D m_Extent = {0, 0};
+
+	vk::PresentModeKHR m_PresentMode;
 
 	vk::Image m_DepthImage;
 	vk::DeviceMemory m_DepthImageMemory;

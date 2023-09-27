@@ -11,6 +11,7 @@ set(EXTERNAL_LIBS_INCLUDES
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/glfw/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/glm"
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/stb"
+    "${CMAKE_CURRENT_SOURCE_DIR}/lib/imgui"
     "${Vulkan_INCLUDE_DIRS}"
 )
 
@@ -18,6 +19,7 @@ set(EXTERNAL_LIBS_INCLUDES
 set(EXTERNAL_LIBS
     glfw
     Vulkan::Vulkan
+    imgui
 )
 
 add_subdirectory(lib)

@@ -1,5 +1,7 @@
 #include <iostream>
 #include <array>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_vulkan.h>
 #include "Renderer.h"
 
 
@@ -32,6 +34,7 @@ void Renderer::Initialize()
 		SetupMeshes();
 		CreateCommandBuffers();
 		CreateSyncObjects();
+		InitImGui();
 	}
 	catch (vk::SystemError& err)
     {
@@ -62,6 +65,7 @@ void Renderer::Terminate()
 {
 	try
 	{
+		DestroyImGui();
 		DestroyMeshes();
 		DestroyMaterials();
 		DestroyPipelines();
@@ -144,7 +148,7 @@ void Renderer::SetupDescriptors()
 		.Build();
 
 	m_GlobalDescriptorPool = DescriptorPool::Builder(*m_Device)
-		.SetMaxSets(MAX_FRAMES_IN_FLIGHT * m_Models.size())
+		.SetMaxSets(1000)
 		.AddPoolSize(vk::DescriptorType::eUniformBuffer, MAX_FRAMES_IN_FLIGHT)
 		.AddPoolSize(vk::DescriptorType::eCombinedImageSampler, 1)
 		.Build();
@@ -249,8 +253,7 @@ void Renderer::DrawFrame()
 	vk::CommandBuffer& commandBuffer = m_Frames[m_CurrentFrame].CommandBuffer;
 	uint32_t currentBuffer{};
 
-	BeginFrame(currentBuffer);
-
+	BeginFrame(currentBuffer);	
 	UpdateSceneUBO(m_CurrentFrame);
 	m_Pipeline->Bind(commandBuffer);
 	commandBuffer.bindDescriptorSets(
@@ -287,7 +290,99 @@ void Renderer::DrawFrame()
 			commandBuffer.draw(mesh->GetVertexSize(), 1, 0, 0);
 	}
 
+	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+
+	ImGui::NewFrame();
+	DrawImGui();
+	ImGui::Render();
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_Frames[m_CurrentFrame].CommandBuffer);
 	EndFrame(currentBuffer);
+}
+
+void Renderer::InitImGui()
+{
+	vk::DescriptorPoolSize pool_sizes[] =
+	{
+		{ vk::DescriptorType::eSampler, 1000 },
+		{ vk::DescriptorType::eCombinedImageSampler, 1000 },
+		{ vk::DescriptorType::eSampledImage, 1000 },
+		{ vk::DescriptorType::eStorageImage, 1000 },
+		{ vk::DescriptorType::eUniformTexelBuffer, 1000 },
+		{ vk::DescriptorType::eStorageTexelBuffer, 1000 },
+		{ vk::DescriptorType::eUniformBuffer, 1000 },
+		{ vk::DescriptorType::eStorageBuffer, 1000 },
+		{ vk::DescriptorType::eUniformBufferDynamic, 1000 },
+		{ vk::DescriptorType::eStorageBufferDynamic, 1000 },
+		{ vk::DescriptorType::eInputAttachment, 1000 }
+	};
+
+	vk::DescriptorPoolCreateInfo pool_info(
+		vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+		1000,
+		std::size(pool_sizes),
+		pool_sizes
+	);
+
+	vk::Result createPoolResult = m_Device->GetDevice().createDescriptorPool(&pool_info, nullptr, &m_ImguiPool);
+	if (createPoolResult != vk::Result::eSuccess)
+		throw std::runtime_error("Failed to create descriptor pool");
+
+	ImGui::CreateContext();
+
+	const VkFormat requestSurfaceImageFormat[] = { VK_FORMAT_B8G8R8A8_SRGB };
+    const VkColorSpaceKHR requestSurfaceColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
+	ImGui_ImplVulkanH_SelectSurfaceFormat(
+		m_Device->GetPhysicalDevice(),
+		m_Device->GetSurface(),
+		requestSurfaceImageFormat,
+		(size_t)IM_ARRAYSIZE(requestSurfaceImageFormat),
+		requestSurfaceColorSpace
+	);
+
+	ImGui_ImplGlfw_InitForVulkan(m_Window.GetWindow(), true);
+
+	ImGui_ImplVulkan_InitInfo init_info = {};
+		init_info.Instance = m_Device->GetInstance();
+		init_info.PhysicalDevice = m_Device->GetPhysicalDevice();
+		init_info.Device = m_Device->GetDevice();
+		init_info.QueueFamily = m_Device->GetQueueFamilies().GraphicsFamily.value();
+		init_info.Queue = m_Device->GetGraphicsQueue();
+		init_info.PipelineCache = VK_NULL_HANDLE;
+		init_info.DescriptorPool = m_ImguiPool;
+		init_info.Allocator = nullptr;
+		init_info.MinImageCount = ImGui_ImplVulkanH_GetMinImageCountFromPresentMode(static_cast<VkPresentModeKHR>(m_SwapChain->GetPresentMode()));
+		init_info.ImageCount = ImGui_ImplVulkanH_GetMinImageCountFromPresentMode(static_cast<VkPresentModeKHR>(m_SwapChain->GetPresentMode()));
+		init_info.CheckVkResultFn = nullptr;
+
+	ImGui_ImplVulkan_Init(&init_info, m_SwapChain->GetRenderPass());
+
+	vk::CommandBuffer commandBuffer = m_Device->BeginSingleTimeCommands();
+
+	ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+	m_Device->EndSingleTimeCommands(commandBuffer);
+	ImGui_ImplVulkan_DestroyFontUploadObjects();
+}
+
+void Renderer::DrawImGui()
+{
+	ImGui::Begin("Directional Light");
+	ImGui::SliderFloat("Intensity", &m_DirectionalLight->Intensity, 0.f, 1.f);
+	ImGui::SliderFloat("Ambient Intensity", &m_DirectionalLight->AmbientIntensity, 0.f, 1.f);
+	ImGui::ColorEdit3("Light Color", (float*)&m_DirectionalLight->Color, ImGuiColorEditFlags_NoInputs);
+
+	ImGui::End();
+
+	ImGui::ShowDemoWindow();
+	//ImGui::ShowMetricsWindow();
+}
+
+void Renderer::DestroyImGui()
+{
+	ImGui_ImplVulkan_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+	m_Device->GetDevice().destroyDescriptorPool(m_ImguiPool);
 }
 
 void Renderer::BeginFrame(uint32_t &imageIndex)

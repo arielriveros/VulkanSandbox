@@ -246,9 +246,10 @@ vk::PresentModeKHR SwapChain::SelectSwapPresentMode(const std::vector<vk::Presen
 {
     for (const auto& availablePresentMode : availablePresentModes)
 		if (availablePresentMode == vk::PresentModeKHR::eMailbox)
-			return availablePresentMode;
+			m_PresentMode = availablePresentMode;
 
-	return vk::PresentModeKHR::eFifo;
+	m_PresentMode = vk::PresentModeKHR::eFifo;
+	return m_PresentMode;
 }
 
 vk::Extent2D SwapChain::SelectSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities)
