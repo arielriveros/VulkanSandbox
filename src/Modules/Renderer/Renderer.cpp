@@ -5,10 +5,10 @@
 #include "Renderer.h"
 
 
-Renderer::Renderer(Window& window, Camera& camera, std::vector<Model*> models)
+Renderer::Renderer(Window& window, Camera& camera, SceneGraph& sceneGraph)
 	: m_Window{ window },
 	  m_Camera{ camera },
-	  m_Models{ models }
+	  m_SceneGraph{ sceneGraph }
 {
 	std::cout << "Renderer Constructor" << std::endl;
 	Resize(m_Window.Width, m_Window.Height);
@@ -92,12 +92,12 @@ void Renderer::Resize(uint32_t width, uint32_t height)
 
 void Renderer::SetupMeshes()
 {
-	for (Model* model : m_Models)
+	for (Model model : m_SceneGraph.m_Models)
 	{
-		MeshData meshData = model->GetMeshData();
+		MeshData meshData = model.GetMeshData();
 		Mesh* mesh = new Mesh(*m_Device);
 		mesh->Create(meshData.Vertices, meshData.Indices);
-		m_Meshes.insert({ model->GetName(), mesh });
+		m_Meshes.insert({ model.GetName(), mesh });
 	}
 }
 
@@ -112,10 +112,10 @@ void Renderer::DestroyMeshes()
 
 void Renderer::SetupMaterials()
 {
-	for (Model* model : m_Models)
+	for (Model model : m_SceneGraph.m_Models)
 	{
 		Material* material = new Material(*m_Device);
-		material->Create(model->GetMaterialParameters());
+		material->Create(model.GetMaterialParameters());
 		
 		material->DescriptorSetLayout = DescriptorSetLayout::Builder(*m_Device)
 			.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
@@ -127,7 +127,7 @@ void Renderer::SetupMaterials()
 			.WriteImage(1, &material->BaseTexture->DescriptorInfo())
 			.Build(material->DescriptorSet);
 
-		m_Materials.insert({ model->GetName(), material });
+		m_Materials.insert({ model.GetName(), material });
 	}
 }
 
@@ -263,17 +263,17 @@ void Renderer::DrawFrame()
 		1, &m_Frames[m_CurrentFrame].SceneDescriptorSet,
 		0, nullptr);
 
-	for (uint32_t i = 0; i < m_Models.size(); i++)
+	for (uint32_t i = 0; i < m_SceneGraph.m_Models.size(); i++)
 	{
-		Mesh* mesh = m_Meshes[m_Models[i]->GetName()];
-		Material* material = m_Materials[m_Models[i]->GetName()];
+		Mesh* mesh = m_Meshes[m_SceneGraph.m_Models[i].GetName()];
+		Material* material = m_Materials[m_SceneGraph.m_Models[i].GetName()];
 		
 		PushConstantData pushConstantData{};
-		pushConstantData.Model = m_Models[i]->GetModelMatrix();
-		pushConstantData.Normal = m_Models[i]->GetNormalMatrix();
+		pushConstantData.Model = m_SceneGraph.m_Models[i].GetModelMatrix();
+		pushConstantData.Normal = m_SceneGraph.m_Models[i].GetNormalMatrix();
 		commandBuffer.pushConstants(m_Pipeline->GetLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstantData), &pushConstantData);
 
-		material->UpdateUniformBuffer(m_Models[i]->GetMaterialParameters());
+		material->UpdateUniformBuffer(m_SceneGraph.m_Models[i].GetMaterialParameters());
 
 		commandBuffer.bindDescriptorSets(
 			vk::PipelineBindPoint::eGraphics,
@@ -373,12 +373,13 @@ void Renderer::DrawImGui()
 	}
 
 	if (ImGui::CollapsingHeader("Models"))
-		for (Model* model : m_Models)
-			model->OnGUI();
+	{
+		m_SceneGraph.OnGUI();
+	}
 
 	ImGui::End();
 
-	ImGui::ShowDemoWindow();
+	//ImGui::ShowDemoWindow();
 	//ImGui::ShowMetricsWindow();
 }
 

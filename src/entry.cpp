@@ -1,6 +1,6 @@
 #include <iostream>
 #include <cstdlib>
-#include "App/app.h"
+#include "Core/App.h"
 
 int main() {
     App app;

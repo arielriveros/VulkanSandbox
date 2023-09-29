@@ -27,7 +27,7 @@ void App::Init()
 	m_Camera.Position.z = 3.0f;
 	m_Camera.Rotation.x = -45.0f;
 
-	Model* cube = new Model("cube", MeshData::Cube(), {{{0.0f, 0.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 32.0f}}});
+	/* Model* cube = new Model("cube", MeshData::Cube(), {{{0.0f, 0.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 32.0f}}});
 	m_Models.push_back(cube);
 	Model* sphere = new Model("sphere", MeshData::Sphere(), {{{1.0f, 0.0f, 1.0f, 1.0f}}, "resources/assets/images/grass.jpg"});
 	sphere->Position.x = -1.0f;
@@ -41,11 +41,18 @@ void App::Init()
 	floor->Position.y = -1.0f;
 	floor->Rotation.x = -90.0f;
 	floor->Scale = { 10.0f, 10.0f, 10.0f };
-	m_Models.push_back(floor);
+	m_Models.push_back(floor); */
+
+	m_Scene = SceneGraph();
+	m_Scene.Initialize();
+	m_Scene.AddNode("cube", MeshData::Cube(), {{{0.0f, 0.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 32.0f}}});
+	m_Scene.AddNode("sphere", MeshData::Sphere(), {{{1.0f, 0.0f, 1.0f, 1.0f}}, "resources/assets/images/grass.jpg"});
+	m_Scene.AddNode("pyramid", MeshData::Pyramid(), {{{0.0f, 1.0f, 0.0f, 1.0f}}, "resources/assets/images/bricks.jpg"});
+	m_Scene.AddNode("floor", MeshData::Quad(), {{{1.0f, 1.0f, 1.0f, 1.0f}}, "resources/assets/images/bricks.jpg"});
 
 	m_DirLight = DirectionalLight({ 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, 1.0f);
 
-	m_Renderer = std::make_unique<Renderer>(m_Window, m_Camera, m_Models);
+	m_Renderer = std::make_unique<Renderer>(m_Window, m_Camera, m_Scene);
 	m_Renderer->SetDirectionalLight(&m_DirLight);
 	m_Renderer->Initialize();
 }
@@ -65,9 +72,8 @@ void App::Run()
 
 void App::Exit()
 {
-	for (auto& model : m_Models)
-		delete model;
 	m_Renderer->Terminate();
+	m_Scene.Terminate();
 	m_Window.Terminate();
 }
 

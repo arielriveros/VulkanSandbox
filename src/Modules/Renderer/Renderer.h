@@ -19,10 +19,11 @@
 #include "Vulkan/SwapChain.h"
 #include "Vulkan/Texture.h"
 #include "Vulkan/ValidationLayer.h"
-#include "Camera.h"
-#include "Model.h"
+#include "../Scene/Camera.h"
+#include "../Scene/Graph.h"
+#include "../Scene/Model.h"
 #include "../ModuleInterface.h"
-#include "../../Window/Window.h"
+#include "../../Core/Window.h"
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -52,7 +53,7 @@ struct FrameData {
 class Renderer: public IModule
 {
 public:
-	Renderer(Window& window, Camera& camera, std::vector<Model*> models);
+	Renderer(Window& window, Camera& camera, SceneGraph& sceneGraph);
 	~Renderer();
 
 	void Initialize();
@@ -95,7 +96,7 @@ private:
 
 	Window& m_Window;
 	Camera& m_Camera;
-	std::vector<Model*> m_Models;
+	SceneGraph& m_SceneGraph;
 
 	std::unique_ptr<Device> m_Device;
 	std::unique_ptr<Pipeline> m_Pipeline;

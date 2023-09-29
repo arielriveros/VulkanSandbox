@@ -2,8 +2,8 @@
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include "Vulkan/Mesh.h"
-#include "Vulkan/Material.h"
+#include "../Renderer/Vulkan/Mesh.h"
+#include "../Renderer/Vulkan/Material.h"
 #include <string>
 
 class Model
@@ -31,8 +31,8 @@ private:
     std::string m_Name;
     MeshData m_MeshData;
     MaterialData m_Material;
-
     void OnGUI();
 
-    friend class Renderer;
+
+    friend class SceneGraph;
 };

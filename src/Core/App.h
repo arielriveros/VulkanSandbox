@@ -2,9 +2,10 @@
 #include <GLFW/glfw3.h>
 #include <memory>
 #include <vector>
-#include "../Window/Window.h"
-#include "../Modules/Renderer/Camera.h"
-#include "../Modules/Renderer/Model.h"
+#include "../Core/Window.h"
+#include "../Modules/Scene/Camera.h"
+#include "../Modules/Scene/Graph.h"
+#include "../Modules/Scene/Model.h"
 #include "../Modules/Renderer/Renderer.h"
 #include "../Modules/Renderer/Lighting/DirectionalLight.h"
 
@@ -24,7 +25,7 @@ private:
 
 	std::unique_ptr<Renderer> m_Renderer;
 	Camera m_Camera;
-	std::vector<Model*> m_Models;
+	SceneGraph m_Scene;
 	DirectionalLight m_DirLight;
 	Window m_Window{ "App", 800, 600 };
 };

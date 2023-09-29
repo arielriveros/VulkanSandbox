@@ -1,7 +1,7 @@
 #pragma once
 #include <vulkan/vulkan.hpp>
 #include "Device.h"
-#include "../../../Window/Window.h"
+#include "../../../Core/Window.h"
 
 class SwapChain
 {
