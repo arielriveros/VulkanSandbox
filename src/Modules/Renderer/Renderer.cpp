@@ -378,6 +378,79 @@ void Renderer::DrawImGui()
 		m_SceneGraph.OnGUI();
 	}
 
+	if (ImGui::Button("Add Sphere"))
+	{
+		std::string name = "sphere" + std::to_string(m_SceneGraph.m_Nodes.size());
+		m_SceneGraph.AddNode(name, MeshData::Sphere(), {{}, ""});
+
+		Material* material = new Material(*m_Device);
+		material->Create(m_SceneGraph.FindNode(name).Model.GetMaterialParameters());
+
+		material->DescriptorSetLayout = DescriptorSetLayout::Builder(*m_Device)
+			.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
+			.AddBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
+			.Build();
+
+		DescriptorWriter(*material->DescriptorSetLayout, *m_GlobalDescriptorPool)
+			.WriteBuffer(0, &material->MaterialUniformBuffer->DescriptorInfo())
+			.WriteImage(1, &material->BaseTexture->DescriptorInfo())
+			.Build(material->DescriptorSet);
+
+		m_Materials.insert({ name, material });
+
+		Mesh* mesh = new Mesh(*m_Device);
+		mesh->Create(m_SceneGraph.FindNode(name).Model.GetMeshData().Vertices, m_SceneGraph.FindNode(name).Model.GetMeshData().Indices);
+		m_Meshes.insert({ name, mesh });
+	}
+	if (ImGui::Button("Add Cube"))
+	{
+		std::string name = "cube" + std::to_string(m_SceneGraph.m_Nodes.size());
+		m_SceneGraph.AddNode(name, MeshData::Cube(), {{}, ""});
+
+		Material* material = new Material(*m_Device);
+		material->Create(m_SceneGraph.FindNode(name).Model.GetMaterialParameters());
+
+		material->DescriptorSetLayout = DescriptorSetLayout::Builder(*m_Device)
+			.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
+			.AddBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
+			.Build();
+
+		DescriptorWriter(*material->DescriptorSetLayout, *m_GlobalDescriptorPool)
+			.WriteBuffer(0, &material->MaterialUniformBuffer->DescriptorInfo())
+			.WriteImage(1, &material->BaseTexture->DescriptorInfo())
+			.Build(material->DescriptorSet);
+
+		m_Materials.insert({ name, material });
+
+		Mesh* mesh = new Mesh(*m_Device);
+		mesh->Create(m_SceneGraph.FindNode(name).Model.GetMeshData().Vertices, m_SceneGraph.FindNode(name).Model.GetMeshData().Indices);
+		m_Meshes.insert({ name, mesh });
+	}
+	if (ImGui::Button("Add Pyramid"))
+	{
+		std::string name = "pyramid" + std::to_string(m_SceneGraph.m_Nodes.size());
+		m_SceneGraph.AddNode(name, MeshData::Pyramid(), {{}, ""});
+
+		Material* material = new Material(*m_Device);
+		material->Create(m_SceneGraph.FindNode(name).Model.GetMaterialParameters());
+
+		material->DescriptorSetLayout = DescriptorSetLayout::Builder(*m_Device)
+			.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
+			.AddBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
+			.Build();
+
+		DescriptorWriter(*material->DescriptorSetLayout, *m_GlobalDescriptorPool)
+			.WriteBuffer(0, &material->MaterialUniformBuffer->DescriptorInfo())
+			.WriteImage(1, &material->BaseTexture->DescriptorInfo())
+			.Build(material->DescriptorSet);
+
+		m_Materials.insert({ name, material });
+
+		Mesh* mesh = new Mesh(*m_Device);
+		mesh->Create(m_SceneGraph.FindNode(name).Model.GetMeshData().Vertices, m_SceneGraph.FindNode(name).Model.GetMeshData().Indices);
+		m_Meshes.insert({ name, mesh });
+	}
+
 	ImGui::End();
 
 	//ImGui::ShowDemoWindow();
