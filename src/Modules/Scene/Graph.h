@@ -5,6 +5,12 @@
 #include "../Renderer/Vulkan/Material.h"
 #include "Model.h"
 
+struct Node
+{
+    std::string Name;
+    Model Model;
+};
+
 class SceneGraph
 {
 public:
@@ -17,9 +23,11 @@ public:
     void OnGUI();
 
     void AddNode(std::string name, const MeshData& meshData, MaterialData material);
+    Node& FindNode(std::string name);
+    Node& GetNode(uint32_t index) { return m_Nodes[index]; }
 
 private:
-    std::vector<Model> m_Models;
+    std::vector<Node> m_Nodes;
 
     friend class Renderer;
 };

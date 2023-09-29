@@ -10,7 +10,7 @@ class Model
 {
 public:
     Model() = default;
-    Model(std::string name, const MeshData& meshData, MaterialData material);
+    Model(const MeshData& meshData, MaterialData material);
     ~Model();
 
     glm::vec3 Position = glm::vec3(0.0f);
@@ -25,13 +25,11 @@ public:
     MeshData GetMeshData() const { return m_MeshData; }
     MaterialData& GetMaterialParameters() { return m_Material; }
     void SetMaterialParameters(MaterialData material) { m_Material = material; }
-    std::string GetName() const { return m_Name; }
 
 private:
-    std::string m_Name;
     MeshData m_MeshData;
     MaterialData m_Material;
-    void OnGUI();
+    void OnGUI(const std::string id);
 
 
     friend class SceneGraph;

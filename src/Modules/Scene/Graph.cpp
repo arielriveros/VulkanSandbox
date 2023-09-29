@@ -19,16 +19,22 @@ void SceneGraph::Terminate()
 
 void SceneGraph::OnGUI()
 {
-    ImGui::Begin("Scene Graph");
-    for (auto& model : m_Models)
-    {
-        model.OnGUI();
-    }
-    ImGui::End();
+    for (auto& node : m_Nodes)
+        node.Model.OnGUI(node.Name);
 }
 
 void SceneGraph::AddNode(std::string name, const MeshData &meshData, MaterialData material)
 {
-    Model model = Model(name, meshData, material);
-    m_Models.push_back(model);
+    Model model = Model(meshData, material);
+    m_Nodes.push_back({ name, model });
+}
+
+Node& SceneGraph::FindNode(std::string name)
+{
+    for (auto& node : m_Nodes)
+    {
+        if (node.Name == name)
+            return node;
+    }
+    return Node();
 }
