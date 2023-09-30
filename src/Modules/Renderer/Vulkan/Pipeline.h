@@ -2,10 +2,17 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 
-struct VertexDescriptions
+struct PipelineConfig
 {
 	vk::VertexInputBindingDescription BindingDescription;
 	std::vector<vk::VertexInputAttributeDescription> AttributeDescriptions;
+	uint32_t SetLayoutCount;
+	const vk::DescriptorSetLayout* SetLayouts;
+	uint32_t PushConstantRangeSize;
+
+	vk::PolygonMode PolygonMode = vk::PolygonMode::eFill;
+	vk::PrimitiveTopology Topology = vk::PrimitiveTopology::eTriangleList;
+	vk::CullModeFlagBits CullMode = vk::CullModeFlagBits::eBack;
 };
 
 class Pipeline
@@ -17,10 +24,7 @@ public:
 	void Create(
 		const std::string& vertexSource,
 		const std::string& fragmentSource,
-		VertexDescriptions descriptions,
-		uint32_t setLayoutCount,
-		const vk::DescriptorSetLayout* setLayouts,
-		uint32_t pushConstantRangeSize);
+		PipelineConfig config);
 	void Terminate();
     void Bind(vk::CommandBuffer commandBuffer);
 

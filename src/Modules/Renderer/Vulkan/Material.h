@@ -18,13 +18,16 @@ struct MaterialParameters {
 struct MaterialData {
 	MaterialParameters Parameters;
 	std::string TexturePath = "";
+	std::string Type = "default";
 };
 
 class Material {
 public:
     Material() = default;
 	Material(Device &device);
-	~Material();	
+	~Material();
+
+	const std::string& GetType() const { return m_Type; }
 
 private:
     void Create(MaterialData& parameters);
@@ -34,7 +37,7 @@ private:
 	std::unique_ptr<Buffer> MaterialUniformBuffer;
 	std::unique_ptr<Texture> BaseTexture;
 	vk::DescriptorSet DescriptorSet;
-	std::unique_ptr<DescriptorSetLayout> DescriptorSetLayout{};
+	std::string m_Type;
 
 	friend class Renderer;
 };

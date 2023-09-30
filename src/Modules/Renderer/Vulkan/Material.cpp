@@ -9,8 +9,6 @@ Material::~Material()
 {
     BaseTexture->Destroy();
     BaseTexture.reset();
-
-    DescriptorSetLayout.reset();
 }
 
 void Material::Create(MaterialData& parameters)
@@ -33,6 +31,7 @@ void Material::Create(MaterialData& parameters)
 			vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
 		);
 	MaterialUniformBuffer->Map();
+    m_Type = parameters.Type;
 }
 
 void Material::UpdateUniformBuffer(MaterialData& parameters)

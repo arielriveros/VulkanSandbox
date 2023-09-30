@@ -1,13 +1,5 @@
 #include "Mesh.h"
 
-VertexDescriptions Vertex::GetDescriptions()
-{
-	VertexDescriptions descriptions;
-	descriptions.BindingDescription = GetBindingDescription();
-	descriptions.AttributeDescriptions = GetAttributeDescriptions();
-	return descriptions;
-}
-
 vk::VertexInputBindingDescription Vertex::GetBindingDescription()
 {
 	return vk::VertexInputBindingDescription(

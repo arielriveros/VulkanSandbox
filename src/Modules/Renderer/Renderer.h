@@ -50,6 +50,12 @@ struct FrameData {
 	vk::DescriptorSet SceneDescriptorSet;
 };
 
+struct MaterialPipeline
+{
+	std::unique_ptr<Pipeline> Pipeline;
+	std::unique_ptr<DescriptorSetLayout> MaterialDescriptorSetLayout;
+};
+
 class Renderer: public IModule
 {
 public:
@@ -99,8 +105,9 @@ private:
 	SceneGraph& m_SceneGraph;
 
 	std::unique_ptr<Device> m_Device;
-	std::unique_ptr<Pipeline> m_Pipeline;
 	std::unique_ptr<SwapChain> m_SwapChain;
+
+	std::unordered_map<std::string, MaterialPipeline> m_Pipelines;
 
 	std::unordered_map<std::string, Mesh*> m_Meshes;
 	std::unordered_map<std::string, Material*> m_Materials;
@@ -109,8 +116,9 @@ private:
 	std::vector<FrameData> m_Frames = std::vector<FrameData>(MAX_FRAMES_IN_FLIGHT);
 	uint32_t m_CurrentFrame = 0;
 
-	std::unique_ptr<DescriptorPool> m_GlobalDescriptorPool{};
+	std::unique_ptr<DescriptorPool> m_SceneDescriptorPool{};
 	std::unique_ptr<DescriptorSetLayout> m_SceneDescriptorSetLayout{};
+	std::unique_ptr<DescriptorPool> m_MaterialDescriptorPool{};
 
 	vk::DescriptorPool m_ImguiPool;
 };

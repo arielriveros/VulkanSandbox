@@ -29,8 +29,8 @@ void Renderer::Initialize()
 		m_SwapChain = std::make_unique<SwapChain>(*m_Device, m_Window);
 		m_SwapChain->Initialize();
 		SetupDescriptors();
-		SetupMaterials();
 		SetupPipelines();
+		SetupMaterials();
 		SetupMeshes();
 		CreateCommandBuffers();
 		CreateSyncObjects();
@@ -115,17 +115,16 @@ void Renderer::SetupMaterials()
 	for (Node node : m_SceneGraph.m_Nodes)
 	{
 		Material* material = new Material(*m_Device);
-		material->Create(node.Model.GetMaterialParameters());
+		auto parameters = node.Model.GetMaterialParameters();
+		material->Create(parameters);
 		
-		material->DescriptorSetLayout = DescriptorSetLayout::Builder(*m_Device)
-			.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
-			.AddBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
-			.Build();
-
-		DescriptorWriter(*material->DescriptorSetLayout, *m_GlobalDescriptorPool)
-			.WriteBuffer(0, &material->MaterialUniformBuffer->DescriptorInfo())
-			.WriteImage(1, &material->BaseTexture->DescriptorInfo())
-			.Build(material->DescriptorSet);
+		DescriptorWriter(
+			*m_Pipelines[parameters.Type].MaterialDescriptorSetLayout,
+			*m_MaterialDescriptorPool
+			)
+				.WriteBuffer(0, &material->MaterialUniformBuffer->DescriptorInfo())
+				.WriteImage(1, &material->BaseTexture->DescriptorInfo())
+				.Build(material->DescriptorSet);
 
 		m_Materials.insert({ node.Name, material });
 	}
@@ -147,9 +146,14 @@ void Renderer::SetupDescriptors()
 		.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment)
 		.Build();
 
-	m_GlobalDescriptorPool = DescriptorPool::Builder(*m_Device)
+	m_SceneDescriptorPool = DescriptorPool::Builder(*m_Device)
+		.SetMaxSets(MAX_FRAMES_IN_FLIGHT)
+		.AddPoolSize(vk::DescriptorType::eUniformBuffer, 1)
+		.Build();
+
+	m_MaterialDescriptorPool = DescriptorPool::Builder(*m_Device)
 		.SetMaxSets(1000)
-		.AddPoolSize(vk::DescriptorType::eUniformBuffer, MAX_FRAMES_IN_FLIGHT)
+		.AddPoolSize(vk::DescriptorType::eUniformBuffer, 1)
 		.AddPoolSize(vk::DescriptorType::eCombinedImageSampler, 1)
 		.Build();
 
@@ -166,7 +170,7 @@ void Renderer::SetupDescriptors()
 
 		vk::DescriptorBufferInfo bufferInfo = m_Frames[i].SceneUniformBuffer->DescriptorInfo();
 
-		DescriptorWriter (*m_SceneDescriptorSetLayout, *m_GlobalDescriptorPool)
+		DescriptorWriter (*m_SceneDescriptorSetLayout, *m_SceneDescriptorPool)
 			.WriteBuffer(0, &bufferInfo)
 			.Build(m_Frames[i].SceneDescriptorSet);
 	}
@@ -174,8 +178,9 @@ void Renderer::SetupDescriptors()
 
 void Renderer::DestroyDescriptors()
 {
-	m_GlobalDescriptorPool.reset();
+	m_SceneDescriptorPool.reset();
 	m_SceneDescriptorSetLayout.reset();
+	m_MaterialDescriptorPool.reset();
 
 	for (size_t i = 0; i < m_Frames.size(); i++)
 		m_Frames[i].SceneUniformBuffer.reset();
@@ -183,22 +188,104 @@ void Renderer::DestroyDescriptors()
 
 void Renderer::SetupPipelines()
 {
-	m_Pipeline = std::make_unique<Pipeline>(m_Device->GetDevice(), m_SwapChain->GetRenderPass()); // new Pipeline(m_Device->GetDevice(), m_SwapChain->GetRenderPass());
-	auto SceneLayout = m_SceneDescriptorSetLayout->GetDescriptorSetLayout();
-	auto materialLayout = m_Materials["cube"]->DescriptorSetLayout->GetDescriptorSetLayout();
-	std::array<vk::DescriptorSetLayout, 2> setLayouts = { SceneLayout, materialLayout };
-	m_Pipeline->Create(
-		"resources/shaders/default.vert.spv",
-		"resources/shaders/default.frag.spv",
-		Vertex::GetDescriptions(),
-		static_cast<uint32_t>(setLayouts.size()),
-		setLayouts.data(),
-		sizeof(PushConstantData));
+	// default pipeline
+	{
+		auto pipeline = Pipeline(m_Device->GetDevice(), m_SwapChain->GetRenderPass());
+		auto sceneLayout = m_SceneDescriptorSetLayout->GetDescriptorSetLayout();
+		auto materialLayout = DescriptorSetLayout::Builder(*m_Device)
+			.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
+			.AddBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
+			.Build();
+			
+		std::array<vk::DescriptorSetLayout, 2> setLayouts = { sceneLayout, materialLayout->GetDescriptorSetLayout() };
+		pipeline.Create(
+			"resources/shaders/default.vert.spv",
+			"resources/shaders/default.frag.spv",
+			{
+				Vertex::GetBindingDescription(),
+				Vertex::GetAttributeDescriptions(),
+				static_cast<uint32_t>(setLayouts.size()),
+				setLayouts.data(),
+				sizeof(PushConstantData)
+			}
+		);
+
+		MaterialPipeline materialPipelineData{};
+		materialPipelineData.Pipeline = std::make_unique<Pipeline>(pipeline);
+		materialPipelineData.MaterialDescriptorSetLayout = std::move(materialLayout);
+
+		m_Pipelines.insert({ "default", std::move(materialPipelineData) });
+	}
+
+	// basic pipeline
+	{
+		auto pipeline = Pipeline(m_Device->GetDevice(), m_SwapChain->GetRenderPass());
+		auto sceneLayout = m_SceneDescriptorSetLayout->GetDescriptorSetLayout();
+		auto materialLayout = DescriptorSetLayout::Builder(*m_Device)
+			.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
+			.AddBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
+			.Build();
+			
+		std::array<vk::DescriptorSetLayout, 2> setLayouts = { sceneLayout, materialLayout->GetDescriptorSetLayout() };
+		pipeline.Create(
+			"resources/shaders/basic.vert.spv",
+			"resources/shaders/basic.frag.spv",
+			{
+				Vertex::GetBindingDescription(),
+				Vertex::GetAttributeDescriptions(),
+				static_cast<uint32_t>(setLayouts.size()),
+				setLayouts.data(),
+				sizeof(PushConstantData)
+			}
+		);
+
+		MaterialPipeline materialPipelineData{};
+		materialPipelineData.Pipeline = std::make_unique<Pipeline>(pipeline);
+		materialPipelineData.MaterialDescriptorSetLayout = std::move(materialLayout);
+
+		m_Pipelines.insert({ "basic", std::move(materialPipelineData) });
+	}
+
+	// wireframe pipeline
+	{
+		auto pipeline = Pipeline(m_Device->GetDevice(), m_SwapChain->GetRenderPass());
+		auto sceneLayout = m_SceneDescriptorSetLayout->GetDescriptorSetLayout();
+		auto materialLayout = DescriptorSetLayout::Builder(*m_Device)
+			.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
+			.AddBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
+			.Build();
+			
+		std::array<vk::DescriptorSetLayout, 2> setLayouts = { sceneLayout, materialLayout->GetDescriptorSetLayout() };
+		pipeline.Create(
+			"resources/shaders/basic.vert.spv",
+			"resources/shaders/basic.frag.spv",
+			{
+				Vertex::GetBindingDescription(),
+				Vertex::GetAttributeDescriptions(),
+				static_cast<uint32_t>(setLayouts.size()),
+				setLayouts.data(),
+				sizeof(PushConstantData),
+				vk::PolygonMode::eLine,
+				vk::PrimitiveTopology::eTriangleList,
+				vk::CullModeFlagBits::eNone
+			}
+		);
+
+		MaterialPipeline materialPipelineData{};
+		materialPipelineData.Pipeline = std::make_unique<Pipeline>(pipeline);
+		materialPipelineData.MaterialDescriptorSetLayout = std::move(materialLayout);
+
+		m_Pipelines.insert({ "wireframe", std::move(materialPipelineData) });
+	}
 }
 
 void Renderer::DestroyPipelines()
 {
-	m_Pipeline->Terminate();
+	for (auto& pipeline : m_Pipelines)
+	{
+		pipeline.second.Pipeline->Terminate();
+		pipeline.second.MaterialDescriptorSetLayout.reset();
+	}
 }
 
 void Renderer::UpdateSceneUBO(uint32_t currentImage)
@@ -255,30 +342,41 @@ void Renderer::DrawFrame()
 
 	BeginFrame(currentBuffer);	
 	UpdateSceneUBO(m_CurrentFrame);
-	m_Pipeline->Bind(commandBuffer);
-	commandBuffer.bindDescriptorSets(
-		vk::PipelineBindPoint::eGraphics,
-		m_Pipeline->GetLayout(),
-		0,
-		1, &m_Frames[m_CurrentFrame].SceneDescriptorSet,
-		0, nullptr);
+
+	std::string currentPipeline = "";
 
 	for (uint32_t i = 0; i < m_SceneGraph.m_Nodes.size(); i++)
 	{
 		Node node = m_SceneGraph.GetNode(i);
 		Mesh* mesh = m_Meshes[node.Name];
 		Material* material = m_Materials[node.Name];
+
+		// only bind pipeline if it's different from the last one
+		if (currentPipeline != material->GetType())
+		{
+			currentPipeline = material->GetType();
+			m_Pipelines[currentPipeline].Pipeline->Bind(commandBuffer);
+			
+			// bind scene descriptor set
+			commandBuffer.bindDescriptorSets(
+			vk::PipelineBindPoint::eGraphics,
+			m_Pipelines[material->GetType()].Pipeline->GetLayout(),
+			0,
+			1, &m_Frames[m_CurrentFrame].SceneDescriptorSet,
+			0, nullptr);
+		}
 		
 		PushConstantData pushConstantData{};
 		pushConstantData.Model = node.Model.GetModelMatrix();
 		pushConstantData.Normal = node.Model.GetNormalMatrix();
-		commandBuffer.pushConstants(m_Pipeline->GetLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstantData), &pushConstantData);
+		commandBuffer.pushConstants(m_Pipelines[material->GetType()].Pipeline->GetLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstantData), &pushConstantData);
 
 		material->UpdateUniformBuffer(node.Model.GetMaterialParameters());
 
+		// bind material descriptor set
 		commandBuffer.bindDescriptorSets(
 			vk::PipelineBindPoint::eGraphics,
-			m_Pipeline->GetLayout(),
+			m_Pipelines[material->GetType()].Pipeline->GetLayout(),
 			1,
 			1, &material->DescriptorSet,
 			0, nullptr);
@@ -291,11 +389,12 @@ void Renderer::DrawFrame()
 			commandBuffer.draw(mesh->GetVertexSize(), 1, 0, 0);
 	}
 
+	// TODO: move to begin frame function
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
-
 	ImGui::NewFrame();
 	DrawImGui();
+	// TODO: move to end frame function
 	ImGui::Render();
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_Frames[m_CurrentFrame].CommandBuffer);
 	EndFrame(currentBuffer);
@@ -381,76 +480,69 @@ void Renderer::DrawImGui()
 	if (ImGui::Button("Add Sphere"))
 	{
 		std::string name = "sphere" + std::to_string(m_SceneGraph.m_Nodes.size());
-		m_SceneGraph.AddNode(name, MeshData::Sphere(), {{}, ""});
+		m_SceneGraph.AddNode(name, MeshData::Sphere(), MaterialData());
+
+		Mesh* mesh = new Mesh(*m_Device);
+		MeshData data = m_SceneGraph.FindNode(name).Model.GetMeshData();
+		mesh->Create(data.Vertices, data.Indices);
+		m_Meshes.insert({ name, mesh });
 
 		Material* material = new Material(*m_Device);
 		material->Create(m_SceneGraph.FindNode(name).Model.GetMaterialParameters());
 
-		material->DescriptorSetLayout = DescriptorSetLayout::Builder(*m_Device)
-			.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
-			.AddBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
-			.Build();
-
-		DescriptorWriter(*material->DescriptorSetLayout, *m_GlobalDescriptorPool)
-			.WriteBuffer(0, &material->MaterialUniformBuffer->DescriptorInfo())
-			.WriteImage(1, &material->BaseTexture->DescriptorInfo())
-			.Build(material->DescriptorSet);
+		DescriptorWriter(
+			*m_Pipelines["default"].MaterialDescriptorSetLayout,
+			*m_MaterialDescriptorPool)
+				.WriteBuffer(0, &material->MaterialUniformBuffer->DescriptorInfo())
+				.WriteImage(1, &material->BaseTexture->DescriptorInfo())
+				.Build(material->DescriptorSet);
 
 		m_Materials.insert({ name, material });
-
-		Mesh* mesh = new Mesh(*m_Device);
-		mesh->Create(m_SceneGraph.FindNode(name).Model.GetMeshData().Vertices, m_SceneGraph.FindNode(name).Model.GetMeshData().Indices);
-		m_Meshes.insert({ name, mesh });
 	}
 	if (ImGui::Button("Add Cube"))
 	{
 		std::string name = "cube" + std::to_string(m_SceneGraph.m_Nodes.size());
 		m_SceneGraph.AddNode(name, MeshData::Cube(), {{}, ""});
 
+		Mesh* mesh = new Mesh(*m_Device);
+		MeshData data = m_SceneGraph.FindNode(name).Model.GetMeshData();
+		mesh->Create(data.Vertices, data.Indices);
+		m_Meshes.insert({ name, mesh });
+
 		Material* material = new Material(*m_Device);
 		material->Create(m_SceneGraph.FindNode(name).Model.GetMaterialParameters());
 
-		material->DescriptorSetLayout = DescriptorSetLayout::Builder(*m_Device)
-			.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
-			.AddBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
-			.Build();
-
-		DescriptorWriter(*material->DescriptorSetLayout, *m_GlobalDescriptorPool)
-			.WriteBuffer(0, &material->MaterialUniformBuffer->DescriptorInfo())
-			.WriteImage(1, &material->BaseTexture->DescriptorInfo())
-			.Build(material->DescriptorSet);
+		DescriptorWriter(
+			*m_Pipelines["default"].MaterialDescriptorSetLayout,
+			*m_MaterialDescriptorPool)
+				.WriteBuffer(0, &material->MaterialUniformBuffer->DescriptorInfo())
+				.WriteImage(1, &material->BaseTexture->DescriptorInfo())
+				.Build(material->DescriptorSet);
 
 		m_Materials.insert({ name, material });
-
-		Mesh* mesh = new Mesh(*m_Device);
-		mesh->Create(m_SceneGraph.FindNode(name).Model.GetMeshData().Vertices, m_SceneGraph.FindNode(name).Model.GetMeshData().Indices);
-		m_Meshes.insert({ name, mesh });
 	}
 	if (ImGui::Button("Add Pyramid"))
 	{
 		std::string name = "pyramid" + std::to_string(m_SceneGraph.m_Nodes.size());
 		m_SceneGraph.AddNode(name, MeshData::Pyramid(), {{}, ""});
 
+		Mesh* mesh = new Mesh(*m_Device);
+		MeshData data = m_SceneGraph.FindNode(name).Model.GetMeshData();
+		mesh->Create(data.Vertices, data.Indices);
+		m_Meshes.insert({ name, mesh });
+
 		Material* material = new Material(*m_Device);
 		material->Create(m_SceneGraph.FindNode(name).Model.GetMaterialParameters());
 
-		material->DescriptorSetLayout = DescriptorSetLayout::Builder(*m_Device)
-			.AddBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
-			.AddBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
-			.Build();
-
-		DescriptorWriter(*material->DescriptorSetLayout, *m_GlobalDescriptorPool)
-			.WriteBuffer(0, &material->MaterialUniformBuffer->DescriptorInfo())
-			.WriteImage(1, &material->BaseTexture->DescriptorInfo())
-			.Build(material->DescriptorSet);
+		DescriptorWriter(
+			*m_Pipelines["default"].MaterialDescriptorSetLayout,
+			*m_MaterialDescriptorPool)
+				.WriteBuffer(0, &material->MaterialUniformBuffer->DescriptorInfo())
+				.WriteImage(1, &material->BaseTexture->DescriptorInfo())
+				.Build(material->DescriptorSet);
 
 		m_Materials.insert({ name, material });
-
-		Mesh* mesh = new Mesh(*m_Device);
-		mesh->Create(m_SceneGraph.FindNode(name).Model.GetMeshData().Vertices, m_SceneGraph.FindNode(name).Model.GetMeshData().Indices);
-		m_Meshes.insert({ name, mesh });
 	}
-
 	ImGui::End();
 
 	//ImGui::ShowDemoWindow();

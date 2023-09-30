@@ -9,11 +9,7 @@ Pipeline::~Pipeline() {}
 void Pipeline::Create(
 	const std::string &vertexSource,
 	const std::string &fragmentSource,
-	VertexDescriptions descriptions,
-	uint32_t setLayoutCount,
-	const vk::DescriptorSetLayout* setLayouts,
-	uint32_t pushConstantRangeSize
-	)
+	PipelineConfig config)
 {
 	auto vertShaderCode = ReadFile(vertexSource);
 	auto fragShaderCode = ReadFile(fragmentSource);
@@ -45,12 +41,12 @@ void Pipeline::Create(
 	vk::PipelineDynamicStateCreateInfo dynamicState( vk::PipelineDynamicStateCreateFlags(), dynamicStates );
 
 	vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
-	vertexInputInfo.setVertexBindingDescriptions( descriptions.BindingDescription );
-    vertexInputInfo.setVertexAttributeDescriptions( descriptions.AttributeDescriptions );
+	vertexInputInfo.setVertexBindingDescriptions( config.BindingDescription );
+    vertexInputInfo.setVertexAttributeDescriptions( config.AttributeDescriptions );
 
 	vk::PipelineInputAssemblyStateCreateInfo inputAssembly(
 		vk::PipelineInputAssemblyStateCreateFlags(),
-		vk::PrimitiveTopology::eTriangleList
+		config.Topology
 	);
 
 	vk::PipelineViewportStateCreateInfo viewportState(
@@ -63,8 +59,8 @@ void Pipeline::Create(
 		vk::PipelineRasterizationStateCreateFlags(),
 		false,
 		false,
-		vk::PolygonMode::eFill,
-		vk::CullModeFlagBits::eBack,
+		config.PolygonMode,
+		config.CullMode,
 		vk::FrontFace::eCounterClockwise,
 		false,
 		0.0f,
@@ -118,12 +114,13 @@ void Pipeline::Create(
 	vk::PushConstantRange pushConstantRange(
 		vk::ShaderStageFlagBits::eVertex,
 		0,
-		pushConstantRangeSize
+		config.PushConstantRangeSize
 	);
 
 	vk::PipelineLayoutCreateInfo pipelineLayoutInfo(
 		vk::PipelineLayoutCreateFlags(),
-		setLayoutCount, setLayouts,
+		config.SetLayoutCount,
+		config.SetLayouts,
 		1, &pushConstantRange
 	);
 

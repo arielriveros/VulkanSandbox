@@ -1,8 +1,9 @@
 #pragma once
 #include <glm/glm.hpp>
+#include <vulkan/vulkan.hpp>
+#include <vector>
 #include "Buffer.h"
 #include "Device.h"
-#include "Pipeline.h"
 
 struct Vertex
 {
@@ -10,7 +11,6 @@ struct Vertex
 	glm::vec2 TexCoord;
 	glm::vec3 Normal;
 
-	static VertexDescriptions GetDescriptions();
 	static vk::VertexInputBindingDescription GetBindingDescription();
 	static std::vector<vk::VertexInputAttributeDescription> GetAttributeDescriptions();
 };
