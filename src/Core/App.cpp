@@ -29,10 +29,11 @@ void App::Init()
 
 	m_Scene = SceneGraph();
 	m_Scene.Initialize();
-	m_Scene.AddNode("cube", MeshData::Cube(), {{{0.0f, 0.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 32.0f}}, "", "wireframe"});
+
+	m_Scene.AddNode("cube", MeshData::Cube(), {{{0.0f, 0.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 32.0f}}, "", MaterialType::Wireframe});
 	m_Scene.FindNode("cube").Model.Position.x = 2.0f;
 
-	m_Scene.AddNode("sphere", MeshData::Sphere(), {{{1.0f, 1.0f, 1.0f, 1.0f}}, "resources/assets/images/grass.jpg", "basic"});
+	m_Scene.AddNode("sphere", MeshData::Sphere(), {{{1.0f, 1.0f, 1.0f, 1.0f}}, "resources/assets/images/grass.jpg",  MaterialType::Basic});
 	m_Scene.FindNode("sphere").Model.Position.x = -2.0f;
 
 	m_Scene.AddNode("pyramid", MeshData::Pyramid(), {{{0.0f, 1.0f, 0.0f, 1.0f}}, "resources/assets/images/bricks.jpg"});

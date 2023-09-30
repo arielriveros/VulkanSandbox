@@ -107,7 +107,7 @@ private:
 	std::unique_ptr<Device> m_Device;
 	std::unique_ptr<SwapChain> m_SwapChain;
 
-	std::unordered_map<std::string, MaterialPipeline> m_Pipelines;
+	std::unordered_map<MaterialType, MaterialPipeline, EnumClassHash> m_Pipelines;
 
 	std::unordered_map<std::string, Mesh*> m_Meshes;
 	std::unordered_map<std::string, Material*> m_Materials;

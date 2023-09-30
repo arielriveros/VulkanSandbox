@@ -214,7 +214,7 @@ void Renderer::SetupPipelines()
 		materialPipelineData.Pipeline = std::make_unique<Pipeline>(pipeline);
 		materialPipelineData.MaterialDescriptorSetLayout = std::move(materialLayout);
 
-		m_Pipelines.insert({ "default", std::move(materialPipelineData) });
+		m_Pipelines.insert({ MaterialType::Default, std::move(materialPipelineData) });
 	}
 
 	// basic pipeline
@@ -243,7 +243,7 @@ void Renderer::SetupPipelines()
 		materialPipelineData.Pipeline = std::make_unique<Pipeline>(pipeline);
 		materialPipelineData.MaterialDescriptorSetLayout = std::move(materialLayout);
 
-		m_Pipelines.insert({ "basic", std::move(materialPipelineData) });
+		m_Pipelines.insert({ MaterialType::Basic, std::move(materialPipelineData) });
 	}
 
 	// wireframe pipeline
@@ -275,7 +275,7 @@ void Renderer::SetupPipelines()
 		materialPipelineData.Pipeline = std::make_unique<Pipeline>(pipeline);
 		materialPipelineData.MaterialDescriptorSetLayout = std::move(materialLayout);
 
-		m_Pipelines.insert({ "wireframe", std::move(materialPipelineData) });
+		m_Pipelines.insert({ MaterialType::Wireframe, std::move(materialPipelineData) });
 	}
 }
 
@@ -343,7 +343,7 @@ void Renderer::DrawFrame()
 	BeginFrame(currentBuffer);	
 	UpdateSceneUBO(m_CurrentFrame);
 
-	std::string currentPipeline = "";
+	 MaterialType currentPipeline = MaterialType::None;
 
 	for (uint32_t i = 0; i < m_SceneGraph.m_Nodes.size(); i++)
 	{
@@ -491,7 +491,7 @@ void Renderer::DrawImGui()
 		material->Create(m_SceneGraph.FindNode(name).Model.GetMaterialParameters());
 
 		DescriptorWriter(
-			*m_Pipelines["default"].MaterialDescriptorSetLayout,
+			*m_Pipelines[MaterialType::Default].MaterialDescriptorSetLayout,
 			*m_MaterialDescriptorPool)
 				.WriteBuffer(0, &material->MaterialUniformBuffer->DescriptorInfo())
 				.WriteImage(1, &material->BaseTexture->DescriptorInfo())
@@ -513,7 +513,7 @@ void Renderer::DrawImGui()
 		material->Create(m_SceneGraph.FindNode(name).Model.GetMaterialParameters());
 
 		DescriptorWriter(
-			*m_Pipelines["default"].MaterialDescriptorSetLayout,
+			*m_Pipelines[MaterialType::Default].MaterialDescriptorSetLayout,
 			*m_MaterialDescriptorPool)
 				.WriteBuffer(0, &material->MaterialUniformBuffer->DescriptorInfo())
 				.WriteImage(1, &material->BaseTexture->DescriptorInfo())
@@ -535,7 +535,7 @@ void Renderer::DrawImGui()
 		material->Create(m_SceneGraph.FindNode(name).Model.GetMaterialParameters());
 
 		DescriptorWriter(
-			*m_Pipelines["default"].MaterialDescriptorSetLayout,
+			*m_Pipelines[MaterialType::Default].MaterialDescriptorSetLayout,
 			*m_MaterialDescriptorPool)
 				.WriteBuffer(0, &material->MaterialUniformBuffer->DescriptorInfo())
 				.WriteImage(1, &material->BaseTexture->DescriptorInfo())

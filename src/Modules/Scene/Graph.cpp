@@ -36,5 +36,8 @@ Node& SceneGraph::FindNode(std::string name)
         if (node.Name == name)
             return node;
     }
-    return Node();
+    if (m_Nodes.size() > 0)
+        return m_Nodes[0];
+    else
+        throw std::runtime_error("No nodes in scene graph");
 }
