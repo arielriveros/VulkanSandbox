@@ -371,7 +371,7 @@ void Renderer::DrawFrame()
 		pushConstantData.Normal = node.Model.GetNormalMatrix();
 		commandBuffer.pushConstants(m_Pipelines[material->GetType()].Pipeline->GetLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstantData), &pushConstantData);
 
-		material->UpdateUniformBuffer(node.Model.GetMaterialParameters());
+		material->UpdateMaterial(node.Model.GetMaterialParameters());
 
 		// bind material descriptor set
 		commandBuffer.bindDescriptorSets(

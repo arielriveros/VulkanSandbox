@@ -48,7 +48,7 @@ public:
 
 private:
     void Create(MaterialData& parameters);
-	void UpdateUniformBuffer(MaterialData& parameters);
+	void UpdateMaterial(MaterialData& parameters);
 
     Device& m_Device;
 	std::unique_ptr<Buffer> MaterialUniformBuffer;

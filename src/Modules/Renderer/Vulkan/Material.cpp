@@ -34,8 +34,13 @@ void Material::Create(MaterialData& parameters)
     m_Type = parameters.Type;
 }
 
-void Material::UpdateUniformBuffer(MaterialData& parameters)
+void Material::UpdateMaterial(MaterialData& parameters)
 {
+    // update type
+    if (m_Type != parameters.Type)
+        m_Type = parameters.Type;
+
+    // update ubo
     MaterialParameters ubo{};
     ubo.DiffuseColor = parameters.Parameters.DiffuseColor;
     ubo.SpecularColor = parameters.Parameters.SpecularColor;

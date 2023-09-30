@@ -134,34 +134,72 @@ void Model::OnGUI(const std::string id)
     ImGui::Separator();
     ImGui::Text("Material");
 
-    ImGui::Text("Diffuse");
-    ImGui::SameLine(0.0f, 0.0f);
-    ImGui::PushItemWidth(50);
-    ImGui::ColorEdit4(("##"+ id +"Diffuse").c_str(), &m_Material.Parameters.DiffuseColor.x, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
-    ImGui::PopItemWidth();
+    if (ImGui::BeginCombo(("##"+ id +"MaterialType").c_str(), m_Material.Type == MaterialType::Basic ? "Basic" : m_Material.Type == MaterialType::Wireframe ? "Wireframe" : "Default"))
+    {
+        if (ImGui::Selectable("Basic", m_Material.Type == MaterialType::Basic))
+            m_Material.Type = MaterialType::Basic;
+        if (ImGui::Selectable("Wireframe", m_Material.Type == MaterialType::Wireframe))
+            m_Material.Type = MaterialType::Wireframe;
+        if (ImGui::Selectable("Default", m_Material.Type == MaterialType::Default))
+            m_Material.Type = MaterialType::Default;
+        ImGui::EndCombo();
+    }
 
-    ImGui::Text("Diffuse Texture");
-    ImGui::SameLine(0.0f, 0.0f);
-    ImGui::PushItemWidth(200);
-    ImGui::InputText(("##"+ id +"DiffuseTexture").c_str(), &m_Material.TexturePath);
+    switch(m_Material.Type)
+    {
+        case MaterialType::Basic:
+            ImGui::Text("Type: Basic");
+            ImGui::Text("Color");
+            ImGui::SameLine(0.0f, 0.0f);
+            ImGui::PushItemWidth(50);
+            ImGui::ColorEdit4(("##"+ id +"Diffuse").c_str(), &m_Material.Parameters.DiffuseColor.x, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+            ImGui::PopItemWidth();
 
-    ImGui::Text("Specular");
-    ImGui::SameLine(0.0f, 0.0f);
-    ImGui::PushItemWidth(50);
-    ImGui::ColorEdit3(("##"+ id +"Specular").c_str(), &m_Material.Parameters.SpecularColor.x, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
-    ImGui::PopItemWidth();
+            ImGui::Text("Texture");
+            ImGui::SameLine(0.0f, 0.0f);
+            ImGui::PushItemWidth(200);
+            ImGui::InputText(("##"+ id +"DiffuseTexture").c_str(), &m_Material.TexturePath);
+            break;
+        case MaterialType::Wireframe:
+            ImGui::Text("Type: Wireframe");
+            ImGui::Text("Color");
+            ImGui::SameLine(0.0f, 0.0f);
+            ImGui::PushItemWidth(50);
+            ImGui::ColorEdit4(("##"+ id +"Diffuse").c_str(), &m_Material.Parameters.DiffuseColor.x, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+            ImGui::PopItemWidth();
+            break;
+        case MaterialType::Default:
+            ImGui::Text("Type: Default");
+            ImGui::Text("Diffuse");
+            ImGui::SameLine(0.0f, 0.0f);
+            ImGui::PushItemWidth(50);
+            ImGui::ColorEdit4(("##"+ id +"Diffuse").c_str(), &m_Material.Parameters.DiffuseColor.x, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+            ImGui::PopItemWidth();
 
-    ImGui::Text("Shininess");
-    ImGui::SameLine(0.0f, 0.0f);
-    ImGui::PushItemWidth(50);
-    ImGui::DragFloat(("##"+ id +"Shininess").c_str(), &m_Material.Parameters.SpecularColor.a, 0.2f, 0.0f, 256.0f);
-    ImGui::PopItemWidth();
+            ImGui::Text("Diffuse Texture");
+            ImGui::SameLine(0.0f, 0.0f);
+            ImGui::PushItemWidth(200);
+            ImGui::InputText(("##"+ id +"DiffuseTexture").c_str(), &m_Material.TexturePath);
 
-    ImGui::Text("Ambient");
-    ImGui::SameLine(0.0f, 0.0f);
-    ImGui::PushItemWidth(50);
-    ImGui::ColorEdit3(("##"+ id +"Ambient").c_str(), &m_Material.Parameters.AmbientColor.x, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
-    ImGui::PopItemWidth();
+            ImGui::Text("Specular");
+            ImGui::SameLine(0.0f, 0.0f);
+            ImGui::PushItemWidth(50);
+            ImGui::ColorEdit3(("##"+ id +"Specular").c_str(), &m_Material.Parameters.SpecularColor.x, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+            ImGui::PopItemWidth();
+
+            ImGui::Text("Shininess");
+            ImGui::SameLine(0.0f, 0.0f);
+            ImGui::PushItemWidth(50);
+            ImGui::DragFloat(("##"+ id +"Shininess").c_str(), &m_Material.Parameters.SpecularColor.a, 0.2f, 0.0f, 256.0f);
+            ImGui::PopItemWidth();
+
+            ImGui::Text("Ambient");
+            ImGui::SameLine(0.0f, 0.0f);
+            ImGui::PushItemWidth(50);
+            ImGui::ColorEdit3(("##"+ id +"Ambient").c_str(), &m_Material.Parameters.AmbientColor.x, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+            ImGui::PopItemWidth();
+            break;
+    }
 
     ImGui::PopID();
 }
