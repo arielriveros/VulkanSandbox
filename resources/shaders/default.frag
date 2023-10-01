@@ -26,7 +26,7 @@ void main() {
     vec3 normal = normalize(fragNormal);
 
     // Calculate the direction to the light
-    vec3 lightDir = normalize(vec3(scene.dirLightPos) - vec3(fragPos));
+    vec3 lightDir = normalize(vec3(scene.dirLightPos) - vec3(0.0f));
 
     // Calculate the diffuse term
     float diffuse = max(dot(normal, lightDir), 0.0);
