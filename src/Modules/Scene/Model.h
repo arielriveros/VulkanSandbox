@@ -11,8 +11,6 @@ public:
     Model(const MeshData& meshData, MaterialData material);
     ~Model();
 
-    Transform Transform;
-
     MeshData GetMeshData() const { return m_MeshData; }
     MaterialData& GetMaterialParameters() { return m_Material; }
     void SetMaterialParameters(MaterialData material) { m_Material = material; }
@@ -20,8 +18,6 @@ public:
 private:
     MeshData m_MeshData;
     MaterialData m_Material;
-    void OnGUI(const std::string id);
 
-
-    friend class SceneGraph;
+    friend class Node;
 };

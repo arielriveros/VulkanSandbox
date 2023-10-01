@@ -3,13 +3,7 @@
 #include <vector>
 #include "../Renderer/Vulkan/Mesh.h"
 #include "../Renderer/Vulkan/Material.h"
-#include "Model.h"
-
-struct Node
-{
-    std::string Name;
-    Model Model;
-};
+#include "Node.h"
 
 class SceneGraph
 {

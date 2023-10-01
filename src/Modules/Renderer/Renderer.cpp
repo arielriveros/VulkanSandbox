@@ -94,10 +94,10 @@ void Renderer::SetupMeshes()
 {
 	for (Node node : m_SceneGraph.m_Nodes)
 	{
-		MeshData meshData = node.Model.GetMeshData();
+		MeshData meshData = node.GetModel().GetMeshData();
 		Mesh* mesh = new Mesh(*m_Device);
 		mesh->Create(meshData.Vertices, meshData.Indices);
-		m_Meshes.insert({ node.Name, mesh });
+		m_Meshes.insert({ node.GetName(), mesh });
 	}
 }
 
@@ -115,7 +115,7 @@ void Renderer::SetupMaterials()
 	for (Node node : m_SceneGraph.m_Nodes)
 	{
 		Material* material = new Material(*m_Device);
-		auto parameters = node.Model.GetMaterialParameters();
+		auto parameters = node.GetModel().GetMaterialParameters();
 		material->Create(parameters);
 		
 		DescriptorWriter(
@@ -126,7 +126,7 @@ void Renderer::SetupMaterials()
 				.WriteImage(1, &material->BaseTexture->DescriptorInfo())
 				.Build(material->DescriptorSet);
 
-		m_Materials.insert({ node.Name, material });
+		m_Materials.insert({ node.GetName(), material });
 	}
 }
 
@@ -348,8 +348,8 @@ void Renderer::DrawFrame()
 	for (uint32_t i = 0; i < m_SceneGraph.m_Nodes.size(); i++)
 	{
 		Node node = m_SceneGraph.GetNode(i);
-		Mesh* mesh = m_Meshes[node.Name];
-		Material* material = m_Materials[node.Name];
+		Mesh* mesh = m_Meshes[node.GetName()];
+		Material* material = m_Materials[node.GetName()];
 
 		// only bind pipeline if it's different from the last one
 		if (currentPipeline != material->GetType())
@@ -367,11 +367,11 @@ void Renderer::DrawFrame()
 		}
 		
 		PushConstantData pushConstantData{};
-		pushConstantData.Model = node.Model.Transform.GetCompositeMatrix();
-		pushConstantData.Normal = node.Model.Transform.GetNormalMatrix();
+		pushConstantData.Model = node.GetTransform().GetCompositeMatrix();
+		pushConstantData.Normal = node.GetTransform().GetNormalMatrix();
 		commandBuffer.pushConstants(m_Pipelines[material->GetType()].Pipeline->GetLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstantData), &pushConstantData);
 
-		material->UpdateMaterial(node.Model.GetMaterialParameters());
+		material->UpdateMaterial(node.GetModel().GetMaterialParameters());
 
 		// bind material descriptor set
 		commandBuffer.bindDescriptorSets(
@@ -483,12 +483,12 @@ void Renderer::DrawImGui()
 		m_SceneGraph.AddNode(name, MeshData::Sphere(), MaterialData());
 
 		Mesh* mesh = new Mesh(*m_Device);
-		MeshData data = m_SceneGraph.FindNode(name).Model.GetMeshData();
+		MeshData data = m_SceneGraph.FindNode(name).GetModel().GetMeshData();
 		mesh->Create(data.Vertices, data.Indices);
 		m_Meshes.insert({ name, mesh });
 
 		Material* material = new Material(*m_Device);
-		material->Create(m_SceneGraph.FindNode(name).Model.GetMaterialParameters());
+		material->Create(m_SceneGraph.FindNode(name).GetModel().GetMaterialParameters());
 
 		DescriptorWriter(
 			*m_Pipelines[MaterialType::Default].MaterialDescriptorSetLayout,
@@ -505,12 +505,12 @@ void Renderer::DrawImGui()
 		m_SceneGraph.AddNode(name, MeshData::Cube(), {{}, ""});
 
 		Mesh* mesh = new Mesh(*m_Device);
-		MeshData data = m_SceneGraph.FindNode(name).Model.GetMeshData();
+		MeshData data = m_SceneGraph.FindNode(name).GetModel().GetMeshData();
 		mesh->Create(data.Vertices, data.Indices);
 		m_Meshes.insert({ name, mesh });
 
 		Material* material = new Material(*m_Device);
-		material->Create(m_SceneGraph.FindNode(name).Model.GetMaterialParameters());
+		material->Create(m_SceneGraph.FindNode(name).GetModel().GetMaterialParameters());
 
 		DescriptorWriter(
 			*m_Pipelines[MaterialType::Default].MaterialDescriptorSetLayout,
@@ -527,12 +527,12 @@ void Renderer::DrawImGui()
 		m_SceneGraph.AddNode(name, MeshData::Pyramid(), {{}, ""});
 
 		Mesh* mesh = new Mesh(*m_Device);
-		MeshData data = m_SceneGraph.FindNode(name).Model.GetMeshData();
+		MeshData data = m_SceneGraph.FindNode(name).GetModel().GetMeshData();
 		mesh->Create(data.Vertices, data.Indices);
 		m_Meshes.insert({ name, mesh });
 
 		Material* material = new Material(*m_Device);
-		material->Create(m_SceneGraph.FindNode(name).Model.GetMaterialParameters());
+		material->Create(m_SceneGraph.FindNode(name).GetModel().GetMaterialParameters());
 
 		DescriptorWriter(
 			*m_Pipelines[MaterialType::Default].MaterialDescriptorSetLayout,

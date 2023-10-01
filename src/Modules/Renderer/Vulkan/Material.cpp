@@ -15,7 +15,7 @@ void Material::Create(MaterialData& parameters)
 {
     BaseTexture = std::make_unique<Texture>(m_Device);
     if (parameters.TexturePath != "")
-        BaseTexture->LoadFromFile(parameters.TexturePath);
+        BaseTexture->LoadFromFile(ASSETS_PATH + parameters.TexturePath);
     else
     {
         const unsigned char pixels[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFD, 0xFD, 0xFD, 0xFD, 'V', '3', 0x12, 0x0F };

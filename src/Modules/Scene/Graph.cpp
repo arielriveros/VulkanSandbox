@@ -20,7 +20,7 @@ void SceneGraph::Terminate()
 void SceneGraph::OnGUI()
 {
     for (auto& node : m_Nodes)
-        node.Model.OnGUI(node.Name);
+        node.OnGUI();
 }
 
 void SceneGraph::AddNode(std::string name, const MeshData &meshData, MaterialData material)
@@ -33,7 +33,7 @@ Node& SceneGraph::FindNode(std::string name)
 {
     for (auto& node : m_Nodes)
     {
-        if (node.Name == name)
+        if (node.GetName() == name)
             return node;
     }
     if (m_Nodes.size() > 0)

@@ -9,6 +9,8 @@
 #include "Device.h"
 #include "Texture.h"
 
+const char* const ASSETS_PATH = "resources/assets/";
+
 struct MaterialParameters {
 	glm::vec4 DiffuseColor = glm::vec4(1.0f);
 	glm::vec4 SpecularColor = glm::vec4(1.0f, 1.0f, 1.0f, 32.0f); // w = shininess

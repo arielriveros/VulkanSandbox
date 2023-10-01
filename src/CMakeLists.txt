@@ -14,6 +14,8 @@ add_executable(${PROJECT_NAME}
 	"Modules/Scene/Graph.cpp"
 	"Modules/Scene/Model.h"
 	"Modules/Scene/Model.cpp"
+	"Modules/Scene/Node.h"
+	"Modules/Scene/Node.cpp"
 	"Modules/Scene/Transform.h"
 	"Modules/Scene/Transform.cpp"
 	"Modules/Renderer/Lighting/DirectionalLight.h"
