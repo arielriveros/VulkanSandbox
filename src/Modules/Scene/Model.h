@@ -1,10 +1,8 @@
 #pragma once
-#define GLM_FORCE_RADIANS
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <string>
 #include "../Renderer/Vulkan/Mesh.h"
 #include "../Renderer/Vulkan/Material.h"
-#include <string>
+#include "Transform.h"
 
 class Model
 {
@@ -13,15 +11,8 @@ public:
     Model(const MeshData& meshData, MaterialData material);
     ~Model();
 
-    glm::vec3 Position = glm::vec3(0.0f);
-    glm::vec3 Rotation = glm::vec3(0.0f);
-    glm::vec3 Scale = glm::vec3(1.0f);
+    Transform Transform;
 
-    glm::mat4 GetTranslationMatrix() const;
-    glm::mat4 GetRotationMatrix() const;
-    glm::mat4 GetScaleMatrix() const;
-    glm::mat4 GetModelMatrix() const;
-    glm::mat4 GetNormalMatrix() const;
     MeshData GetMeshData() const { return m_MeshData; }
     MaterialData& GetMaterialParameters() { return m_Material; }
     void SetMaterialParameters(MaterialData material) { m_Material = material; }

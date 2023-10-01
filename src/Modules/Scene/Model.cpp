@@ -11,35 +11,6 @@ Model::~Model()
 {
 }
 
-glm::mat4 Model::GetTranslationMatrix() const
-{
-    return glm::translate(glm::mat4(1.0f), Position);
-}
-
-glm::mat4 Model::GetRotationMatrix() const
-{
-    glm::mat4 rotation = glm::mat4(1.0f);
-    rotation = glm::rotate(rotation, glm::radians(Rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    rotation = glm::rotate(rotation, glm::radians(Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-    rotation = glm::rotate(rotation, glm::radians(Rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    return rotation;
-}
-
-glm::mat4 Model::GetScaleMatrix() const
-{
-    return glm::scale( glm::mat4(1.0f), Scale);
-}
-
-glm::mat4 Model::GetModelMatrix() const
-{
-    return GetTranslationMatrix() * GetRotationMatrix() * GetScaleMatrix();
-}
-
-glm::mat4 Model::GetNormalMatrix() const
-{
-    return glm::transpose(glm::inverse(GetModelMatrix()));
-}
-
 void Model::OnGUI(const std::string id)
 {
     ImGui::PushID(id.c_str());
@@ -55,7 +26,7 @@ void Model::OnGUI(const std::string id)
 	ImGui::PushItemWidth(50);
     ImGui::PushStyleColor(ImGuiCol_FrameBg, (ImVec4)ImColor::ImColor(1.0f, 0.5f, 0.5f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, (ImVec4)ImColor::ImColor(1.0f, 0.25f, 0.25f, 1.0f));
-    ImGui::DragFloat(("##"+ id +"X Pos").c_str(), &Position.x, 0.1f);
+    ImGui::DragFloat(("##"+ id +"X Pos").c_str(), &Transform.Position.x, 0.1f);
     ImGui::PopStyleColor(2);
     ImGui::PopItemWidth();
 
@@ -63,7 +34,7 @@ void Model::OnGUI(const std::string id)
 	ImGui::PushItemWidth(50);
     ImGui::PushStyleColor(ImGuiCol_FrameBg, (ImVec4)ImColor::ImColor(0.5f, 1.0f, 0.5f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, (ImVec4)ImColor::ImColor(0.25f, 1.0f, 0.25f, 1.0f));
-    ImGui::DragFloat(("##"+ id +"Y Pos").c_str(), &Position.y, 0.1f);
+    ImGui::DragFloat(("##"+ id +"Y Pos").c_str(), &Transform.Position.y, 0.1f);
     ImGui::PopStyleColor(2);
     ImGui::PopItemWidth();
 
@@ -71,7 +42,7 @@ void Model::OnGUI(const std::string id)
 	ImGui::PushItemWidth(50);
     ImGui::PushStyleColor(ImGuiCol_FrameBg, (ImVec4)ImColor::ImColor(0.5f, 0.5f, 1.0f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, (ImVec4)ImColor::ImColor(0.25f, 0.25f, 1.00f, 1.0f));
-    ImGui::DragFloat(("##"+ id +"Z Pos").c_str(), &Position.z, 0.1f);
+    ImGui::DragFloat(("##"+ id +"Z Pos").c_str(), &Transform.Position.z, 0.1f);
     ImGui::PopStyleColor(2);
     ImGui::PopItemWidth();
 
@@ -83,7 +54,7 @@ void Model::OnGUI(const std::string id)
 	ImGui::PushItemWidth(50);
     ImGui::PushStyleColor(ImGuiCol_FrameBg, (ImVec4)ImColor::ImColor(1.0f, 0.5f, 0.5f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, (ImVec4)ImColor::ImColor(1.0f, 0.25f, 0.25f, 1.0f));
-    ImGui::DragFloat(("##"+ id +"X Rot").c_str(), &Rotation.x, 1.0f, -180.0f, 180.0f);
+    ImGui::DragFloat(("##"+ id +"X Rot").c_str(), &Transform.Rotation.x, 1.0f, -180.0f, 180.0f);
     ImGui::PopStyleColor(2);
     ImGui::PopItemWidth();
 
@@ -91,7 +62,7 @@ void Model::OnGUI(const std::string id)
 	ImGui::PushItemWidth(50);
     ImGui::PushStyleColor(ImGuiCol_FrameBg, (ImVec4)ImColor::ImColor(0.5f, 1.0f, 0.5f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, (ImVec4)ImColor::ImColor(0.25f, 1.0f, 0.25f, 1.0f));
-    ImGui::DragFloat(("##"+ id +"Y Rot").c_str(), &Rotation.y, 1.0f, -180.0f, 180.0f);
+    ImGui::DragFloat(("##"+ id +"Y Rot").c_str(), &Transform.Rotation.y, 1.0f, -180.0f, 180.0f);
     ImGui::PopStyleColor(2);
     ImGui::PopItemWidth();
 
@@ -99,7 +70,7 @@ void Model::OnGUI(const std::string id)
 	ImGui::PushItemWidth(50);
     ImGui::PushStyleColor(ImGuiCol_FrameBg, (ImVec4)ImColor::ImColor(0.5f, 0.5f, 1.0f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, (ImVec4)ImColor::ImColor(0.25f, 0.25f, 1.00f, 1.0f));
-    ImGui::DragFloat(("##"+ id +"Z Rot").c_str(), &Rotation.z, 1.0f, -180.0f, 180.0f);
+    ImGui::DragFloat(("##"+ id +"Z Rot").c_str(), &Transform.Rotation.z, 1.0f, -180.0f, 180.0f);
     ImGui::PopStyleColor(2);
     ImGui::PopItemWidth();
 
@@ -111,7 +82,7 @@ void Model::OnGUI(const std::string id)
 	ImGui::PushItemWidth(50);
     ImGui::PushStyleColor(ImGuiCol_FrameBg, (ImVec4)ImColor::ImColor(1.0f, 0.5f, 0.5f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, (ImVec4)ImColor::ImColor(1.0f, 0.25f, 0.25f, 1.0f));
-    ImGui::DragFloat(("##"+ id +"X Scl").c_str(), &Scale.x, 0.1f);
+    ImGui::DragFloat(("##"+ id +"X Scl").c_str(), &Transform.Scale.x, 0.1f);
     ImGui::PopStyleColor(2);
     ImGui::PopItemWidth();
 
@@ -119,7 +90,7 @@ void Model::OnGUI(const std::string id)
 	ImGui::PushItemWidth(50);
     ImGui::PushStyleColor(ImGuiCol_FrameBg, (ImVec4)ImColor::ImColor(0.5f, 1.0f, 0.5f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, (ImVec4)ImColor::ImColor(0.25f, 1.0f, 0.25f, 1.0f));
-    ImGui::DragFloat(("##"+ id +"Y Scl").c_str(), &Scale.y, 0.1f);
+    ImGui::DragFloat(("##"+ id +"Y Scl").c_str(), &Transform.Scale.y, 0.1f);
     ImGui::PopStyleColor(2);
     ImGui::PopItemWidth();
 
@@ -127,7 +98,7 @@ void Model::OnGUI(const std::string id)
 	ImGui::PushItemWidth(50);
     ImGui::PushStyleColor(ImGuiCol_FrameBg, (ImVec4)ImColor::ImColor(0.5f, 0.5f, 1.0f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, (ImVec4)ImColor::ImColor(0.25f, 0.25f, 1.00f, 1.0f));
-    ImGui::DragFloat(("##"+ id +"Z Scl").c_str(), &Scale.z, 0.1f);
+    ImGui::DragFloat(("##"+ id +"Z Scl").c_str(), &Transform.Scale.z, 0.1f);
     ImGui::PopStyleColor(2);
     ImGui::PopItemWidth();
 

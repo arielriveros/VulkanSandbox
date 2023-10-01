@@ -367,8 +367,8 @@ void Renderer::DrawFrame()
 		}
 		
 		PushConstantData pushConstantData{};
-		pushConstantData.Model = node.Model.GetModelMatrix();
-		pushConstantData.Normal = node.Model.GetNormalMatrix();
+		pushConstantData.Model = node.Model.Transform.GetCompositeMatrix();
+		pushConstantData.Normal = node.Model.Transform.GetNormalMatrix();
 		commandBuffer.pushConstants(m_Pipelines[material->GetType()].Pipeline->GetLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstantData), &pushConstantData);
 
 		material->UpdateMaterial(node.Model.GetMaterialParameters());
