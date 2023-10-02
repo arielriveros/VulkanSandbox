@@ -43,5 +43,5 @@ void main() {
 
     // Calculate the final color
     vec4 color = texture(baseTexture, fragUV);
-    outColor = color * (ambientColor + diffuseColor + specularColor);
+    outColor = color * (ambientColor + diffuseColor + specularColor) * scene.dirLightDir.w ;
 }

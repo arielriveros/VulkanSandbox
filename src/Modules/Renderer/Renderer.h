@@ -101,6 +101,7 @@ private:
 	Window& m_Window;
 	Camera& m_Camera;
 	SceneGraph& m_SceneGraph;
+	Node* m_SelectedNode = nullptr;
 
 	std::unique_ptr<Device> m_Device;
 	std::unique_ptr<SwapChain> m_SwapChain;

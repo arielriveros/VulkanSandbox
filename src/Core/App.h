@@ -27,5 +27,5 @@ private:
 	Camera m_Camera;
 	SceneGraph m_Scene;
 	DirectionalLight m_DirLight;
-	Window m_Window{ "App", 800, 600 };
+	Window m_Window{ "App", 1280, 720 };
 };

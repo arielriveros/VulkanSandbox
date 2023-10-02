@@ -469,81 +469,18 @@ void Renderer::InitImGui()
 
 void Renderer::DrawImGui()
 {
-	ImGui::Begin("Scene");
-	if (ImGui::CollapsingHeader("Scene"))
+    ImGui::Begin("Scene Hierarchy");
+    for (auto& node : m_SceneGraph.m_Nodes)
 	{
-		m_SceneGraph.OnGUI();
+        if (ImGui::Selectable(node.GetName().c_str(), m_SelectedNode == &node))
+			m_SelectedNode = &node;
 	}
+    ImGui::End();
 
-	/* 
-	if (ImGui::Button("Add Sphere"))
-	{
-		std::string name = "sphere" + std::to_string(m_SceneGraph.m_Nodes.size());
-		m_SceneGraph.AddNode(name, MeshData::Sphere(), MaterialData());
-
-		Mesh* mesh = new Mesh(*m_Device);
-		MeshData data = m_SceneGraph.FindNode(name).GetModel().GetMeshData();
-		mesh->Create(data.Vertices, data.Indices);
-		m_Meshes.insert({ name, mesh });
-
-		Material* material = new Material(*m_Device);
-		material->Create(m_SceneGraph.FindNode(name).GetModel().GetMaterialParameters());
-
-		DescriptorWriter(
-			*m_Pipelines[MaterialType::Default].MaterialDescriptorSetLayout,
-			*m_MaterialDescriptorPool)
-				.WriteBuffer(0, &material->MaterialUniformBuffer->DescriptorInfo())
-				.WriteImage(1, &material->BaseTexture->DescriptorInfo())
-				.Build(material->DescriptorSet);
-
-		m_Materials.insert({ name, material });
-	}
-	if (ImGui::Button("Add Cube"))
-	{
-		std::string name = "cube" + std::to_string(m_SceneGraph.m_Nodes.size());
-		m_SceneGraph.AddNode(name, MeshData::Cube(), {{}, ""});
-
-		Mesh* mesh = new Mesh(*m_Device);
-		MeshData data = m_SceneGraph.FindNode(name).GetModel().GetMeshData();
-		mesh->Create(data.Vertices, data.Indices);
-		m_Meshes.insert({ name, mesh });
-
-		Material* material = new Material(*m_Device);
-		material->Create(m_SceneGraph.FindNode(name).GetModel().GetMaterialParameters());
-
-		DescriptorWriter(
-			*m_Pipelines[MaterialType::Default].MaterialDescriptorSetLayout,
-			*m_MaterialDescriptorPool)
-				.WriteBuffer(0, &material->MaterialUniformBuffer->DescriptorInfo())
-				.WriteImage(1, &material->BaseTexture->DescriptorInfo())
-				.Build(material->DescriptorSet);
-
-		m_Materials.insert({ name, material });
-	}
-	if (ImGui::Button("Add Pyramid"))
-	{
-		std::string name = "pyramid" + std::to_string(m_SceneGraph.m_Nodes.size());
-		m_SceneGraph.AddNode(name, MeshData::Pyramid(), {{}, ""});
-
-		Mesh* mesh = new Mesh(*m_Device);
-		MeshData data = m_SceneGraph.FindNode(name).GetModel().GetMeshData();
-		mesh->Create(data.Vertices, data.Indices);
-		m_Meshes.insert({ name, mesh });
-
-		Material* material = new Material(*m_Device);
-		material->Create(m_SceneGraph.FindNode(name).GetModel().GetMaterialParameters());
-
-		DescriptorWriter(
-			*m_Pipelines[MaterialType::Default].MaterialDescriptorSetLayout,
-			*m_MaterialDescriptorPool)
-				.WriteBuffer(0, &material->MaterialUniformBuffer->DescriptorInfo())
-				.WriteImage(1, &material->BaseTexture->DescriptorInfo())
-				.Build(material->DescriptorSet);
-
-		m_Materials.insert({ name, material });
-	}
-	 */
-	ImGui::End();
+    ImGui::Begin("Node Properties");
+    if (m_SelectedNode != nullptr)
+		m_SelectedNode->OnGUI();
+    ImGui::End();
 
 	//ImGui::ShowDemoWindow();
 	//ImGui::ShowMetricsWindow();
