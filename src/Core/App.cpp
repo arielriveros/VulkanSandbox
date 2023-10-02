@@ -30,19 +30,24 @@ void App::Init()
 	m_Scene = SceneGraph();
 	m_Scene.Initialize();
 
-	m_Scene.AddNode("cube", MeshData::Cube(), {{{0.0f, 0.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 32.0f}}, "", MaterialType::Wireframe});
-	m_Scene.FindNode("cube").GetTransform().Position.x = 2.0f;
+	Model cube = Model(MeshData::Cube(), {{{0.0f, 0.0f, 1.0f, 1.0f}}, "images/bricks.jpg", MaterialType::Wireframe});
+	Model sphere = Model(MeshData::Sphere(), {{{1.0f, 1.0f, 1.0f, 1.0f}}, "images/grass.jpg"});
+	Model pyramid = Model(MeshData::Pyramid(), {{{0.0f, 1.0f, 0.0f, 1.0f}}, "images/bricks.jpg"});
+	Model floor = Model(MeshData::Quad(), {{{1.0f, 1.0f, 1.0f, 1.0f}}, "images/bricks.jpg"});
 
-	m_Scene.AddNode("sphere", MeshData::Sphere(), {{{1.0f, 1.0f, 1.0f, 1.0f}}, "images/grass.jpg",  MaterialType::Basic});
-	m_Scene.FindNode("sphere").GetTransform().Position.x = -2.0f;
+	m_Scene.AddNode("cube", cube);
+	m_Scene["cube"].GetTransform().Position.x = 2.0f;
 
-	m_Scene.AddNode("pyramid", MeshData::Pyramid(), {{{0.0f, 1.0f, 0.0f, 1.0f}}, "images/bricks.jpg"});
-	m_Scene.FindNode("pyramid").GetTransform().Position.z = -2.0f;
+	m_Scene.AddNode("sphere", cube);
+	m_Scene["sphere"].GetTransform().Position.x = -2.0f;
 
-	m_Scene.AddNode("floor", MeshData::Quad(), {{{1.0f, 1.0f, 1.0f, 1.0f}}, "images/bricks.jpg"});
-	m_Scene.FindNode("floor").GetTransform().Position.y = -1.0f;
-	m_Scene.FindNode("floor").GetTransform().Scale = glm::vec3(10.0f);
-	m_Scene.FindNode("floor").GetTransform().Rotation.x = -90.0f;
+	m_Scene.AddNode("pyramid", pyramid);
+	m_Scene["pyramid"].GetTransform().Position.z = -2.0f;
+
+	m_Scene.AddNode("floor", floor);
+	m_Scene["floor"].GetTransform().Position.y = -1.0f;
+	m_Scene["floor"].GetTransform().Scale = glm::vec3(10.0f);
+	m_Scene["floor"].GetTransform().Rotation.x = -90.0f;
 
 	m_Scene.AddNode("sun", DirectionalLight({ 1.0f, 1.0f, 1.0f }, 1.0f));
 

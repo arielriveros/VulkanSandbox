@@ -92,9 +92,8 @@ void Renderer::Resize(uint32_t width, uint32_t height)
 
 void Renderer::SetupMeshes()
 {
-	for (Node node : m_SceneGraph.m_Nodes)
+	for (Node node : m_SceneGraph.GetNodesByType(NodeType::Model))
 	{
-		if (node.GetType() != NodeType::Model) continue;
 		MeshData meshData = node.GetModel().GetMeshData();
 		Mesh* mesh = new Mesh(*m_Device);
 		mesh->Create(meshData.Vertices, meshData.Indices);
@@ -113,9 +112,8 @@ void Renderer::DestroyMeshes()
 
 void Renderer::SetupMaterials()
 {
-	for (Node node : m_SceneGraph.m_Nodes)
+	for (Node node : m_SceneGraph.GetNodesByType(NodeType::Model))
 	{
-		if (node.GetType() != NodeType::Model) continue;
 		Material* material = new Material(*m_Device);
 		auto parameters = node.GetModel().GetMaterialParameters();
 		material->Create(parameters);
@@ -346,12 +344,12 @@ void Renderer::DrawFrame()
 	BeginFrame(currentBuffer);	
 	UpdateSceneUBO(m_CurrentFrame);
 
-	 MaterialType currentPipeline = MaterialType::None;
+	MaterialType currentPipeline = MaterialType::None;
 
-	for (uint32_t i = 0; i < m_SceneGraph.m_Nodes.size(); i++)
+	std::vector<Node> modelNodes = m_SceneGraph.GetNodesByType(NodeType::Model);
+	for (uint32_t i = 0; i < modelNodes.size(); i++)
 	{
-		Node node = m_SceneGraph.GetNode(i);
-		if (node.GetType() != NodeType::Model) continue;
+		Node node = m_SceneGraph[i];
 
 		Mesh* mesh = m_Meshes[node.GetName()];
 		Material* material = m_Materials[node.GetName()];
@@ -477,6 +475,7 @@ void Renderer::DrawImGui()
 		m_SceneGraph.OnGUI();
 	}
 
+	/* 
 	if (ImGui::Button("Add Sphere"))
 	{
 		std::string name = "sphere" + std::to_string(m_SceneGraph.m_Nodes.size());
@@ -543,6 +542,7 @@ void Renderer::DrawImGui()
 
 		m_Materials.insert({ name, material });
 	}
+	 */
 	ImGui::End();
 
 	//ImGui::ShowDemoWindow();

@@ -23,9 +23,8 @@ void SceneGraph::OnGUI()
         node.OnGUI();
 }
 
-void SceneGraph::AddNode(std::string name, const MeshData &meshData, MaterialData material)
+void SceneGraph::AddNode(std::string name, const Model& model)
 {
-    Model model = Model(meshData, material);
     m_Nodes.push_back({ name, model });
 }
 
@@ -34,7 +33,18 @@ void SceneGraph::AddNode(std::string name, const DirectionalLight &light)
     m_Nodes.push_back({ name, light });
 }
 
-Node& SceneGraph::FindNode(std::string name)
+std::vector<Node> SceneGraph::GetNodesByType(NodeType type)
+{
+    std::vector<Node> nodes;
+    for (auto& node : m_Nodes)
+    {
+        if (node.GetType() == type)
+            nodes.push_back(node);
+    }
+    return nodes;
+}
+
+Node &SceneGraph::FindNode(std::string name)
 {
     for (auto& node : m_Nodes)
     {
