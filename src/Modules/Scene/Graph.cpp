@@ -29,6 +29,11 @@ void SceneGraph::AddNode(std::string name, const MeshData &meshData, MaterialDat
     m_Nodes.push_back({ name, model });
 }
 
+void SceneGraph::AddNode(std::string name, const DirectionalLight &light)
+{
+    m_Nodes.push_back({ name, light });
+}
+
 Node& SceneGraph::FindNode(std::string name)
 {
     for (auto& node : m_Nodes)

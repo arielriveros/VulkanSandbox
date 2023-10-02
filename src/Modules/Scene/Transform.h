@@ -26,4 +26,6 @@ struct Transform
     glm::mat4 GetCompositeMatrix() const;
     
     glm::mat4 GetNormalMatrix() const;
+
+    glm::vec3 GetForward() const;
 };

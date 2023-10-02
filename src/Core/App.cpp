@@ -44,10 +44,9 @@ void App::Init()
 	m_Scene.FindNode("floor").GetTransform().Scale = glm::vec3(10.0f);
 	m_Scene.FindNode("floor").GetTransform().Rotation.x = -90.0f;
 
-	m_DirLight = DirectionalLight({ 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, 1.0f);
+	m_Scene.AddNode("sun", DirectionalLight({ 1.0f, 1.0f, 1.0f }, 1.0f));
 
 	m_Renderer = std::make_unique<Renderer>(m_Window, m_Camera, m_Scene);
-	m_Renderer->SetDirectionalLight(&m_DirLight);
 	m_Renderer->Initialize();
 }
 
@@ -108,24 +107,6 @@ void App::HandleInput()
 
 	if (m_Window.IsKeyPressed(Keyboard::Key::Q))
 		m_Camera.Position.y -= delta;
-
-	if (m_Window.IsKeyPressed(Keyboard::Key::Home))
-		m_DirLight.Position.y += delta;
-
-	if (m_Window.IsKeyPressed(Keyboard::Key::End))
-		m_DirLight.Position.y -= delta;
-
-	if (m_Window.IsKeyPressed(Keyboard::Key::Delete))
-		m_DirLight.Position.x -= delta;
-
-	if (m_Window.IsKeyPressed(Keyboard::Key::PageDown))
-		m_DirLight.Position.x += delta;
-
-	if (m_Window.IsKeyPressed(Keyboard::Key::Insert))
-		m_DirLight.Position.z += delta;
-
-	if (m_Window.IsKeyPressed(Keyboard::Key::PageUp))
-		m_DirLight.Position.z -= delta;
 
 	if (m_Window.IsKeyPressed(Keyboard::Key::Escape))
 		m_Window.Close();

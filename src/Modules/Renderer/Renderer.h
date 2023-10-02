@@ -10,7 +10,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #define IMGUI_ENABLE_PROFILER
 #include <imgui.h>
-#include "Lighting/DirectionalLight.h"
 #include "Vulkan/Buffer.h"
 #include "Vulkan/Descriptor.h"
 #include "Vulkan/Device.h"
@@ -22,6 +21,7 @@
 #include "../Scene/Camera.h"
 #include "../Scene/Graph.h"
 #include "../Scene/Model.h"
+#include "../Scene/Lighting/DirectionalLight.h"
 #include "../ModuleInterface.h"
 #include "../../Core/Window.h"
 
@@ -30,7 +30,7 @@ const int MAX_FRAMES_IN_FLIGHT = 2;
 struct SceneUBO {
 	glm::mat4 ViewProjection;	// Camera view and projection matrix
 	glm::vec4 CameraPosition;	// Camera position, w = 1.0
-	glm::vec4 DirectionalLightPosition;	// Directional light position, w = intensity
+	glm::vec4 DirectionalLightDirection; // Directional light direction, w = intensity
 	glm::vec4 DirectionalLightColor;	// Directional light color (rgb), w = ambient intensity
 };
 
@@ -67,8 +67,6 @@ public:
 	void WaitIdle();
 	void Terminate();
 	void Resize(uint32_t width, uint32_t height);
-
-	void SetDirectionalLight(DirectionalLight* light) { m_DirectionalLight = light; }
 
 private:
 	void SetupMeshes();
@@ -111,7 +109,6 @@ private:
 
 	std::unordered_map<std::string, Mesh*> m_Meshes;
 	std::unordered_map<std::string, Material*> m_Materials;
-	DirectionalLight* m_DirectionalLight;
 
 	std::vector<FrameData> m_Frames = std::vector<FrameData>(MAX_FRAMES_IN_FLIGHT);
 	uint32_t m_CurrentFrame = 0;

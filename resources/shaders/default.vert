@@ -8,7 +8,7 @@ layout(push_constant) uniform PushConstant {
 layout(set = 0, binding = 0) uniform SceneUBO {
     mat4 viewProjection;
     vec4 cameraPos;
-    vec4 dirLightPos;   // xyz = position, w = intensity
+    vec4 dirLightDir;   // xyz = direction, w = intensity
     vec4 dirLightColor; // rgb = color, a = ambient intensity
 } scene;
 

@@ -94,6 +94,7 @@ void Renderer::SetupMeshes()
 {
 	for (Node node : m_SceneGraph.m_Nodes)
 	{
+		if (node.GetType() != NodeType::Model) continue;
 		MeshData meshData = node.GetModel().GetMeshData();
 		Mesh* mesh = new Mesh(*m_Device);
 		mesh->Create(meshData.Vertices, meshData.Indices);
@@ -114,6 +115,7 @@ void Renderer::SetupMaterials()
 {
 	for (Node node : m_SceneGraph.m_Nodes)
 	{
+		if (node.GetType() != NodeType::Model) continue;
 		Material* material = new Material(*m_Device);
 		auto parameters = node.GetModel().GetMaterialParameters();
 		material->Create(parameters);
@@ -293,8 +295,9 @@ void Renderer::UpdateSceneUBO(uint32_t currentImage)
 	SceneUBO ubo{};
 	ubo.ViewProjection = m_Camera.GetProjectionMatrix() * m_Camera.GetViewMatrix();
 	ubo.CameraPosition = glm::vec4(m_Camera.Position, 1.0f);
-	ubo.DirectionalLightPosition = glm::vec4(m_DirectionalLight->Position, m_DirectionalLight->Intensity);
-	ubo.DirectionalLightColor = glm::vec4(m_DirectionalLight->Color, m_DirectionalLight->AmbientIntensity);
+	ubo.DirectionalLightDirection = glm::vec4(m_SceneGraph.FindNode("sun").GetTransform().GetForward(), m_SceneGraph.FindNode("sun").GetLight().Intensity);
+	ubo.DirectionalLightColor = glm::vec4(m_SceneGraph.FindNode("sun").GetLight().Color, m_SceneGraph.FindNode("sun").GetLight().AmbientIntensity);
+
 	m_Frames[currentImage].SceneUniformBuffer->WriteToBuffer(&ubo);
 }
 
@@ -348,6 +351,8 @@ void Renderer::DrawFrame()
 	for (uint32_t i = 0; i < m_SceneGraph.m_Nodes.size(); i++)
 	{
 		Node node = m_SceneGraph.GetNode(i);
+		if (node.GetType() != NodeType::Model) continue;
+
 		Mesh* mesh = m_Meshes[node.GetName()];
 		Material* material = m_Materials[node.GetName()];
 
@@ -467,12 +472,7 @@ void Renderer::InitImGui()
 void Renderer::DrawImGui()
 {
 	ImGui::Begin("Scene");
-	if (ImGui::CollapsingHeader("Lighting"))
-	{
-		m_DirectionalLight->OnGUI();
-	}
-
-	if (ImGui::CollapsingHeader("Models"))
+	if (ImGui::CollapsingHeader("Scene"))
 	{
 		m_SceneGraph.OnGUI();
 	}

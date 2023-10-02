@@ -3,7 +3,7 @@
 layout(set = 0, binding = 0) uniform SceneUBO {
     mat4 viewProjection;
     vec4 cameraPos;
-    vec4 dirLightPos;   // xyz = position, w = intensity
+    vec4 dirLightDir;   // xyz = direction, w = intensity
     vec4 dirLightColor; // rgb = color, a = ambient intensity
 } scene;
 
@@ -26,7 +26,7 @@ void main() {
     vec3 normal = normalize(fragNormal);
 
     // Calculate the direction to the light
-    vec3 lightDir = normalize(vec3(scene.dirLightPos) - vec3(0.0f));
+    vec3 lightDir = normalize(scene.dirLightDir.xyz);
 
     // Calculate the diffuse term
     float diffuse = max(dot(normal, lightDir), 0.0);

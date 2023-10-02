@@ -17,6 +17,7 @@ public:
     void OnGUI();
 
     void AddNode(std::string name, const MeshData& meshData, MaterialData material);
+    void AddNode(std::string name, const DirectionalLight& light);
     Node& FindNode(std::string name);
     Node& GetNode(uint32_t index) { return m_Nodes[index]; }
 

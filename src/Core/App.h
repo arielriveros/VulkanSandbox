@@ -7,7 +7,7 @@
 #include "../Modules/Scene/Graph.h"
 #include "../Modules/Scene/Model.h"
 #include "../Modules/Renderer/Renderer.h"
-#include "../Modules/Renderer/Lighting/DirectionalLight.h"
+#include "../Modules/Scene/Lighting/DirectionalLight.h"
 
 class App
 {

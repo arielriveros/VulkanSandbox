@@ -44,3 +44,9 @@ glm::mat4 Transform::GetNormalMatrix() const
 {
     return glm::transpose(glm::inverse(GetCompositeMatrix()));
 }
+
+glm::vec3 Transform::GetForward() const
+{
+    glm::vec4 forward = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f) * GetRotationMatrix();
+    return glm::vec3(forward.x, forward.y, forward.z);
+}

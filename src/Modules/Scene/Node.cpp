@@ -2,7 +2,12 @@
 #include "Node.h"
 
 Node::Node(std::string name, Model model)
-    : m_Name(name), m_Model(model)
+    : m_Name(name), m_Model(model), m_Type(NodeType::Model)
+{
+}
+
+Node::Node(std::string name, DirectionalLight light)
+    : m_Name(name), m_Light(light), m_Type(NodeType::Light)
 {
 }
 
