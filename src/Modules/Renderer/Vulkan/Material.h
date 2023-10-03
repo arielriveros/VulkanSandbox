@@ -44,8 +44,8 @@ class Material {
 public:
     Material() = default;
 	Material(Device &device);
-	~Material();
 
+	void Destroy();
 	const MaterialType& GetType() const { return m_Type; }
 
 private:

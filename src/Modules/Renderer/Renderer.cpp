@@ -66,8 +66,7 @@ void Renderer::Terminate()
 	try
 	{
 		DestroyImGui();
-		DestroyMeshes();
-		DestroyMaterials();
+		m_SceneGraph.Terminate();
 		DestroyPipelines();
 		DestroyDescriptors();
 		DestroySyncObjects();
@@ -92,49 +91,63 @@ void Renderer::Resize(uint32_t width, uint32_t height)
 
 void Renderer::SetupMeshes()
 {
-	for (Node node : m_SceneGraph.GetNodesByType(NodeType::Model))
+	for (Node& node : m_SceneGraph.m_Nodes)
 	{
-		MeshData meshData = node.GetModel().GetMeshData();
-		Mesh* mesh = new Mesh(*m_Device);
-		mesh->Create(meshData.Vertices, meshData.Indices);
-		m_Meshes.insert({ node.GetName(), mesh });
-	}
-}
+		if (node.GetType() == NodeType::Model)
+		{
+			MeshData meshData = node.GetModel().GetMeshData();
+			node.m_Mesh = new Mesh(*m_Device);
+			node.m_Mesh->Create(meshData.Vertices, meshData.Indices);
+		}
 
-void Renderer::DestroyMeshes()
-{
-	for (std::pair<std::string, Mesh*> mesh : m_Meshes)
-	{
-		mesh.second->Destroy();
-		delete mesh.second;
+		for (Node* child : node.m_Children)
+		{
+			if (child->GetType() == NodeType::Model)
+			{
+				MeshData meshData = child->GetModel().GetMeshData();
+				child->m_Mesh = new Mesh(*m_Device);
+				child->m_Mesh->Create(meshData.Vertices, meshData.Indices);
+			}
+		}
 	}
 }
 
 void Renderer::SetupMaterials()
 {
-	for (Node node : m_SceneGraph.GetNodesByType(NodeType::Model))
+	for (Node& node : m_SceneGraph.m_Nodes)
 	{
-		Material* material = new Material(*m_Device);
-		auto parameters = node.GetModel().GetMaterialParameters();
-		material->Create(parameters);
-		
-		DescriptorWriter(
-			*m_Pipelines[parameters.Type].MaterialDescriptorSetLayout,
-			*m_MaterialDescriptorPool
-			)
-				.WriteBuffer(0, &material->MaterialUniformBuffer->DescriptorInfo())
-				.WriteImage(1, &material->BaseTexture->DescriptorInfo())
-				.Build(material->DescriptorSet);
+		if (node.GetType() == NodeType::Model)
+		{
+			node.m_Material = new Material(*m_Device);
+			
+			auto parameters = node.GetModel().GetMaterialParameters();
+			node.m_Material->Create(parameters);
+			
+			DescriptorWriter(
+				*m_Pipelines[parameters.Type].MaterialDescriptorSetLayout,
+				*m_MaterialDescriptorPool)
+					.WriteBuffer(0, &node.m_Material->MaterialUniformBuffer->DescriptorInfo())
+					.WriteImage(1, &node.m_Material->BaseTexture->DescriptorInfo())
+					.Build(node.m_Material->DescriptorSet);
+		}
 
-		m_Materials.insert({ node.GetName(), material });
-	}
-}
+		for (Node* child : node.m_Children)
+		{
+			if (child->GetType() == NodeType::Model)
+			{
+				child->m_Material = new Material(*m_Device);
 
-void Renderer::DestroyMaterials()
-{
-	for (std::pair<std::string, Material*> material : m_Materials)
-	{
-		delete material.second;
+				auto parameters = child->GetModel().GetMaterialParameters();
+				child->m_Material->Create(parameters);
+				
+				DescriptorWriter(
+					*m_Pipelines[parameters.Type].MaterialDescriptorSetLayout,
+					*m_MaterialDescriptorPool)
+						.WriteBuffer(0, &child->m_Material->MaterialUniformBuffer->DescriptorInfo())
+						.WriteImage(1, &child->m_Material->BaseTexture->DescriptorInfo())
+						.Build(child->m_Material->DescriptorSet);
+			}
+		}
 	}
 }
 
@@ -293,8 +306,8 @@ void Renderer::UpdateSceneUBO(uint32_t currentImage)
 	SceneUBO ubo{};
 	ubo.ViewProjection = m_Camera.GetProjectionMatrix() * m_Camera.GetViewMatrix();
 	ubo.CameraPosition = glm::vec4(m_Camera.Position, 1.0f);
-	ubo.DirectionalLightDirection = glm::vec4(m_SceneGraph.FindNode("sun").GetTransform().GetForward(), m_SceneGraph.FindNode("sun").GetLight().Intensity);
-	ubo.DirectionalLightColor = glm::vec4(m_SceneGraph.FindNode("sun").GetLight().Color, m_SceneGraph.FindNode("sun").GetLight().AmbientIntensity);
+	ubo.DirectionalLightDirection = glm::vec4(m_SceneGraph["sun"].GetTransform().GetForward(), m_SceneGraph["sun"].GetLight().Intensity);
+	ubo.DirectionalLightColor = glm::vec4(m_SceneGraph["sun"].GetLight().Color, m_SceneGraph["sun"].GetLight().AmbientIntensity);
 
 	m_Frames[currentImage].SceneUniformBuffer->WriteToBuffer(&ubo);
 }
@@ -346,24 +359,22 @@ void Renderer::DrawFrame()
 
 	MaterialType currentPipeline = MaterialType::None;
 
-	std::vector<Node> modelNodes = m_SceneGraph.GetNodesByType(NodeType::Model);
-	for (uint32_t i = 0; i < modelNodes.size(); i++)
+	for (Node& node: m_SceneGraph.m_Nodes)
 	{
-		Node node = m_SceneGraph[i];
-
-		Mesh* mesh = m_Meshes[node.GetName()];
-		Material* material = m_Materials[node.GetName()];
+		// only draw model type nodes
+		if (node.GetType() != NodeType::Model)
+			continue;
 
 		// only bind pipeline if it's different from the last one
-		if (currentPipeline != material->GetType())
+		if (currentPipeline != node.m_Material->GetType())
 		{
-			currentPipeline = material->GetType();
+			currentPipeline = node.m_Material->GetType();
 			m_Pipelines[currentPipeline].Pipeline->Bind(commandBuffer);
 			
 			// bind scene descriptor set
 			commandBuffer.bindDescriptorSets(
 			vk::PipelineBindPoint::eGraphics,
-			m_Pipelines[material->GetType()].Pipeline->GetLayout(),
+			m_Pipelines[node.m_Material->GetType()].Pipeline->GetLayout(),
 			0,
 			1, &m_Frames[m_CurrentFrame].SceneDescriptorSet,
 			0, nullptr);
@@ -372,24 +383,24 @@ void Renderer::DrawFrame()
 		PushConstantData pushConstantData{};
 		pushConstantData.Model = node.GetTransform().GetCompositeMatrix();
 		pushConstantData.Normal = node.GetTransform().GetNormalMatrix();
-		commandBuffer.pushConstants(m_Pipelines[material->GetType()].Pipeline->GetLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstantData), &pushConstantData);
+		commandBuffer.pushConstants(m_Pipelines[node.m_Material->GetType()].Pipeline->GetLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstantData), &pushConstantData);
 
-		material->UpdateMaterial(node.GetModel().GetMaterialParameters());
+		node.m_Material->UpdateMaterial(node.GetModel().GetMaterialParameters());
 
 		// bind material descriptor set
 		commandBuffer.bindDescriptorSets(
 			vk::PipelineBindPoint::eGraphics,
-			m_Pipelines[material->GetType()].Pipeline->GetLayout(),
+			m_Pipelines[node.m_Material->GetType()].Pipeline->GetLayout(),
 			1,
-			1, &material->DescriptorSet,
+			1, &node.m_Material->DescriptorSet,
 			0, nullptr);
 
-		mesh->Bind(commandBuffer);
-		if(mesh->IsIndexed())
-			commandBuffer.drawIndexed(mesh->GetIndexCount(), 1, 0, 0, 0);
+		node.m_Mesh->Bind(commandBuffer);
+		if(node.m_Mesh->IsIndexed())
+			commandBuffer.drawIndexed(node.m_Mesh->GetIndexCount(), 1, 0, 0, 0);
 
 		else
-			commandBuffer.draw(mesh->GetVertexSize(), 1, 0, 0);
+			commandBuffer.draw(node.m_Mesh->GetVertexSize(), 1, 0, 0);
 	}
 
 	// TODO: move to begin frame function

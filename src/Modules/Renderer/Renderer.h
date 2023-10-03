@@ -70,10 +70,7 @@ public:
 
 private:
 	void SetupMeshes();
-	void DestroyMeshes();
-
 	void SetupMaterials();
-	void DestroyMaterials();
 
 	void SetupDescriptors();
 	void DestroyDescriptors();
@@ -107,9 +104,6 @@ private:
 	std::unique_ptr<SwapChain> m_SwapChain;
 
 	std::unordered_map<MaterialType, MaterialPipeline, EnumClassHash> m_Pipelines;
-
-	std::unordered_map<std::string, Mesh*> m_Meshes;
-	std::unordered_map<std::string, Material*> m_Materials;
 
 	std::vector<FrameData> m_Frames = std::vector<FrameData>(MAX_FRAMES_IN_FLIGHT);
 	uint32_t m_CurrentFrame = 0;

@@ -31,7 +31,6 @@ class Mesh
 {
 public:
     Mesh(Device& device);
-    ~Mesh();
 
     void Create(std::vector<Vertex> vertices, std::vector<uint16_t> indices);
     void Destroy();

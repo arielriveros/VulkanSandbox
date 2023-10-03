@@ -5,7 +5,7 @@ Material::Material(Device &device)
 {
 }
 
-Material::~Material()
+void Material::Destroy()
 {
     BaseTexture->Destroy();
     BaseTexture.reset();

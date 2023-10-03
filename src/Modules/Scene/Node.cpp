@@ -11,6 +11,32 @@ Node::Node(std::string name, DirectionalLight light)
 {
 }
 
+void Node::Destroy()
+{
+    if (m_Mesh != nullptr)
+    {
+        m_Mesh->Destroy();
+        delete m_Mesh;
+    }
+    if (m_Material != nullptr)
+    {
+        m_Material->Destroy();
+        delete m_Material;
+    }
+
+    for (auto& child : m_Children)
+        child->Destroy();
+
+    m_Children.clear();
+}
+
+Node &Node::AddChild(Node *child)
+{
+    child->m_Parent = this;
+    m_Children.push_back(child);
+    return *this;
+}
+
 void Node::OnGUI()
 {
     ImGui::PushID(m_Name.c_str());

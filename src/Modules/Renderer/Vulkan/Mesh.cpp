@@ -189,10 +189,6 @@ Mesh::Mesh(Device &device): m_Device(device)
 {
 }
 
-Mesh::~Mesh()
-{
-}
-
 void Mesh::Create(std::vector<Vertex> vertices, std::vector<uint16_t> indices)
 {
 	CreateVertexBuffer(vertices);
