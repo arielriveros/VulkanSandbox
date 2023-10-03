@@ -25,15 +25,19 @@ void Node::Destroy()
     }
 
     for (auto& child : m_Children)
-        child->Destroy();
+        child.Destroy();
 
     m_Children.clear();
 }
 
-Node &Node::AddChild(Node *child)
+Node &Node::AddNode(Node &node)
 {
-    child->m_Parent = this;
-    m_Children.push_back(child);
+    // Check if node already exists
+    if (NodeExists(node.GetName()))
+        throw std::runtime_error("Node already exists");
+
+    m_Children.push_back(node);
+    node.m_Parent = this;
     return *this;
 }
 
@@ -219,4 +223,22 @@ void Node::OnGUI()
     }
 
     ImGui::PopID();
+}
+
+bool Node::NodeExists(std::string name)
+{
+    for (auto& node : m_Children)
+    {
+        if (node.GetName() == name)
+            return true;
+    }
+    return false;
+}
+
+Node &Node::FindNode(std::string name)
+{
+    if (NodeExists(name))
+        for (auto& node : m_Children) if (node.GetName() == name) return node;
+
+    throw std::runtime_error("Node does not exist");
 }

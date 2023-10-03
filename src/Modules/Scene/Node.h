@@ -27,20 +27,26 @@ public:
     NodeType GetType() const { return m_Type; }
 
     Node* GetParent() const { return m_Parent; }
-    std::vector<Node*>& GetChildren() { return m_Children; }
+    std::vector<Node>& GetChildren() { return m_Children; }
 
-    Node& AddChild(Node* child);
+    Node& AddNode(Node& node);
+
+    Node& operator[](uint32_t index) { return m_Children[index]; }
+    Node& operator[](std::string name) { return FindNode(name); }
 
     void OnGUI();
     
 private:
+    bool NodeExists(std::string name);
+    Node& FindNode(std::string name);
+
     std::string m_Name;
     Model m_Model;
     Transform m_Transform;
     NodeType m_Type;
 
     Node* m_Parent = nullptr;
-    std::vector<Node*> m_Children; 
+    std::vector<Node> m_Children; 
     
     DirectionalLight m_Light;
 

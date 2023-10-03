@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <stack>
 #include "../Renderer/Vulkan/Mesh.h"
 #include "../Renderer/Vulkan/Material.h"
 #include "Node.h"
@@ -16,15 +17,13 @@ public:
 
     void OnGUI();
 
-    void AddNode(const Node& node);
+    void AddNode(Node& node);
 
-    Node& operator[](uint32_t index) { return m_Nodes[index]; }
-    Node& operator[](std::string name) { return FindNode(name); }
+    Node& operator[](std::string name) { return m_Root[name]; }
 
 private:
-    bool NodeExists(std::string name);
-    Node& FindNode(std::string name);
-    std::vector<Node> m_Nodes;
+    Node m_Root;
 
 friend class Renderer;
+friend class SceneGraphDFSIterator;
 };
