@@ -1,6 +1,11 @@
 #include <imgui.h>
 #include "Node.h"
 
+Node::Node(std::string name)
+    : m_Name(name), m_Type(NodeType::Inner)
+{
+}
+
 Node::Node(std::string name, Model model)
     : m_Name(name), m_Model(model), m_Type(NodeType::Model)
 {
@@ -30,14 +35,14 @@ void Node::Destroy()
     m_Children.clear();
 }
 
-Node &Node::AddNode(Node &node)
+Node& Node::AddNode(Node& node)
 {
     // Check if node already exists
     if (NodeExists(node.GetName()))
         throw std::runtime_error("Node already exists");
 
-    m_Children.push_back(node);
     node.m_Parent = this;
+    m_Children.push_back(node);
     return *this;
 }
 

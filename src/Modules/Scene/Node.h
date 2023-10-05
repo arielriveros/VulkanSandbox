@@ -1,5 +1,6 @@
 #pragma once
 #include <memory.h>
+#include <stack>
 #include "./Lighting/DirectionalLight.h"
 #include "../Renderer/Vulkan/Mesh.h"
 #include "../Renderer/Vulkan/Material.h"
@@ -8,6 +9,7 @@
 
 enum class NodeType
 {
+    Inner,
     Model,
     Light
 };
@@ -16,6 +18,7 @@ class Node
 {
 public:
     Node() = default;
+    Node(std::string name);
     Node(std::string name, Model model);
     Node(std::string name, DirectionalLight light);
     void Destroy();
@@ -43,7 +46,7 @@ private:
     std::string m_Name;
     Model m_Model;
     Transform m_Transform;
-    NodeType m_Type;
+    NodeType m_Type = NodeType::Inner;
 
     Node* m_Parent = nullptr;
     std::vector<Node> m_Children; 

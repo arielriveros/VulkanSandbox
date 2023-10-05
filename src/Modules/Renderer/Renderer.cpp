@@ -91,31 +91,23 @@ void Renderer::Resize(uint32_t width, uint32_t height)
 
 void Renderer::SetupMeshes()
 {
-	for (Node& node : m_SceneGraph.m_Root.m_Children)
+	for (auto it = m_SceneGraph.begin(); it != m_SceneGraph.end(); ++it)
 	{
+		Node& node = *it;
 		if (node.GetType() == NodeType::Model)
 		{
 			MeshData meshData = node.GetModel().GetMeshData();
 			node.m_Mesh = new Mesh(*m_Device);
 			node.m_Mesh->Create(meshData.Vertices, meshData.Indices);
 		}
-
-		for (Node child : node.m_Children)
-		{
-			if (child.GetType() == NodeType::Model)
-			{
-				MeshData meshData = child.GetModel().GetMeshData();
-				child.m_Mesh = new Mesh(*m_Device);
-				child.m_Mesh->Create(meshData.Vertices, meshData.Indices);
-			}
-		}
 	}
 }
 
 void Renderer::SetupMaterials()
 {
-	for (Node& node : m_SceneGraph.m_Root.m_Children)
+	for (auto it = m_SceneGraph.begin(); it != m_SceneGraph.end(); ++it)
 	{
+		Node& node = *it;
 		if (node.GetType() == NodeType::Model)
 		{
 			node.m_Material = new Material(*m_Device);
@@ -129,24 +121,6 @@ void Renderer::SetupMaterials()
 					.WriteBuffer(0, &node.m_Material->MaterialUniformBuffer->DescriptorInfo())
 					.WriteImage(1, &node.m_Material->BaseTexture->DescriptorInfo())
 					.Build(node.m_Material->DescriptorSet);
-		}
-
-		for (Node child : node.m_Children)
-		{
-			if (child.GetType() == NodeType::Model)
-			{
-				child.m_Material = new Material(*m_Device);
-
-				auto parameters = child.GetModel().GetMaterialParameters();
-				child.m_Material->Create(parameters);
-				
-				DescriptorWriter(
-					*m_Pipelines[parameters.Type].MaterialDescriptorSetLayout,
-					*m_MaterialDescriptorPool)
-						.WriteBuffer(0, &child.m_Material->MaterialUniformBuffer->DescriptorInfo())
-						.WriteImage(1, &child.m_Material->BaseTexture->DescriptorInfo())
-						.Build(child.m_Material->DescriptorSet);
-			}
 		}
 	}
 }
@@ -359,9 +333,11 @@ void Renderer::DrawFrame()
 
 	MaterialType currentPipeline = MaterialType::None;
 
-	for (Node& node: m_SceneGraph.m_Root.m_Children)
+	for (auto it = m_SceneGraph.begin(); it != m_SceneGraph.end(); ++it)
 	{
+		Node& node = *it;
 		// only draw model type nodes
+		//if (node.GetType() != NodeType::Model)
 		if (node.GetType() != NodeType::Model)
 			continue;
 
@@ -381,7 +357,16 @@ void Renderer::DrawFrame()
 		}
 		
 		PushConstantData pushConstantData{};
-		pushConstantData.Model = node.GetTransform().GetCompositeMatrix();
+
+		if (node.m_Parent != nullptr)
+		{
+			glm::mat4 parent = node.m_Parent->GetTransform().GetCompositeMatrix();
+			glm::mat4 model = node.GetTransform().GetCompositeMatrix();
+			pushConstantData.Model = parent * model;
+		}
+		else
+			pushConstantData.Model = node.GetTransform().GetCompositeMatrix();
+		
 		pushConstantData.Normal = node.GetTransform().GetNormalMatrix();
 		commandBuffer.pushConstants(m_Pipelines[node.m_Material->GetType()].Pipeline->GetLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstantData), &pushConstantData);
 
@@ -481,8 +466,9 @@ void Renderer::InitImGui()
 void Renderer::DrawImGui()
 {
     ImGui::Begin("Scene Hierarchy");
-    for (auto& node : m_SceneGraph.m_Root.m_Children)
+    for (auto it = m_SceneGraph.begin(); it != m_SceneGraph.end(); ++it)
 	{
+		Node& node = *it;
         if (ImGui::Selectable(node.GetName().c_str(), m_SelectedNode == &node))
 			m_SelectedNode = &node;
 	}

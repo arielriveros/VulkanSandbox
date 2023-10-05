@@ -162,7 +162,8 @@ MeshData MeshData::Sphere(uint32_t definition)
 			glm::vec3 position = {x, y, z};
 			glm::vec3 normal =  glm::normalize(position);
 
-            sphere.Vertices.push_back({position, {u, v}, normal});
+
+            sphere.Vertices.push_back({position, {static_cast<float>(definition - j) / definition, v}, normal});
         }
     }
 

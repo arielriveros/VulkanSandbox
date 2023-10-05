@@ -30,13 +30,26 @@ void App::Init()
 	m_Scene = SceneGraph();
 	m_Scene.Initialize();
 
-	Model cube = Model(MeshData::Cube(), {{{0.0f, 0.0f, 1.0f, 1.0f}}, "images/bricks.jpg", MaterialType::Wireframe});
-	Model sphere = Model(MeshData::Sphere(), {{{1.0f, 1.0f, 1.0f, 1.0f}}, "images/grass.jpg"});
+	Model cube = Model(MeshData::Cube(), {{{0.0f, 0.0f, 1.0f, 1.0f}}, "images/bricks.jpg"});
+	Model sphere = Model(MeshData::Sphere(96), {{{1.0f, 1.0f, 1.0f, 1.0f}}, "images/world.png"});
 	Model pyramid = Model(MeshData::Pyramid(), {{{0.0f, 1.0f, 0.0f, 1.0f}}, "images/bricks.jpg"});
 	Model floor = Model(MeshData::Quad(), {{{1.0f, 1.0f, 1.0f, 1.0f}}, "images/bricks.jpg"});
 
-	m_Scene.AddNode(Node("cube", cube));
-	m_Scene["cube"].GetTransform().Position.x = 2.0f;
+	Node inner = Node("Inner", sphere);
+	Node cubeNode = Node("cube", cube);
+	inner.AddNode(cubeNode);
+	inner.GetTransform().Rotation.y = 45.0f;
+	inner["cube"].GetTransform().Position.x = 2.0f;
+	inner["cube"].GetTransform().Position.y = 2.0f;
+	m_Scene.AddNode(inner);
+
+	Node a = Node("a");
+	Node b = Node("b");
+	Node c = Node("c");
+
+	b.AddNode(c);
+	a.AddNode(b);
+	m_Scene.AddNode(a);
 
 	m_Scene.AddNode(Node("sphere", sphere));
 	m_Scene["sphere"].GetTransform().Position.x = -2.0f;
