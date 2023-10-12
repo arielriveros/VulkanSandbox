@@ -34,9 +34,16 @@ public:
 
     void OnGUI();
 
-    void AddNode(Node& node);
+    void AddNode(Node* node);
 
-    Node& operator[](std::string name) { return m_Root[name]; }
+    Node& operator[](std::string name) {
+        Node* root = m_Root[name];
+        if (root == nullptr)
+        {
+            throw std::runtime_error("Node with name " + name + " does not exist");
+        }
+        return *root;
+    }
 
     SceneGraphDFSIterator begin();
     SceneGraphDFSIterator end() ;

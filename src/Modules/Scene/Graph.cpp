@@ -23,7 +23,7 @@ void SceneGraph::OnGUI()
     m_Root.OnGUI();
 }
 
-void SceneGraph::AddNode(Node &node)
+void SceneGraph::AddNode(Node *node)
 {
     m_Root.AddNode(node);
 }
@@ -81,6 +81,6 @@ void SceneGraphDFSIterator::AdvanceToNextNode()
 
     for (auto it = current_node_->GetChildren().rbegin(); it != current_node_->GetChildren().rend(); ++it)
     {
-        stack_.push(&(*it));
+        stack_.push(*it);
     }
 }

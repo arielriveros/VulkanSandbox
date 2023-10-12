@@ -35,34 +35,38 @@ void App::Init()
 	Model pyramid = Model(MeshData::Pyramid(), {{{0.0f, 1.0f, 0.0f, 1.0f}}, "images/bricks.jpg"});
 	Model floor = Model(MeshData::Quad(), {{{1.0f, 1.0f, 1.0f, 1.0f}}, "images/bricks.jpg"});
 
-	Node inner = Node("Inner", sphere);
-	Node cubeNode = Node("cube", cube);
-	inner.AddNode(cubeNode);
-	inner.GetTransform().Rotation.y = 45.0f;
-	inner["cube"].GetTransform().Position.x = 2.0f;
-	inner["cube"].GetTransform().Position.y = 2.0f;
+	Node* inner = new Node("Inner", sphere);
+	Node* cubeNode = new Node("cube", cube);
+	inner->AddNode(cubeNode);
+	inner->GetTransform().Rotation.y = 45.0f;
+	(*inner)["cube"]->GetTransform().Position.x = 2.0f;
+	(*inner)["cube"]->GetTransform().Position.y = 2.0f;
 	m_Scene.AddNode(inner);
 
-	Node a = Node("a");
-	Node b = Node("b");
-	Node c = Node("c");
+	Node* a = new Node("a");
+	Node* b = new Node("b");
+	Node* c = new Node("c");
 
-	b.AddNode(c);
-	a.AddNode(b);
+	b->AddNode(c);
+	a->AddNode(b);
 	m_Scene.AddNode(a);
 
-	m_Scene.AddNode(Node("sphere", sphere));
+	Node* sphereNode = new Node("sphere", sphere);
+	m_Scene.AddNode(sphereNode);
 	m_Scene["sphere"].GetTransform().Position.x = -2.0f;
 
-	m_Scene.AddNode(Node("pyramid", pyramid));
+	Node* pyramidNode = new Node("pyramid", pyramid);
+	m_Scene.AddNode(pyramidNode);
 	m_Scene["pyramid"].GetTransform().Position.z = -2.0f;
 
-	m_Scene.AddNode(Node("floor", floor));
+	Node* floorNode = new Node("floor", floor);
+	m_Scene.AddNode(floorNode);
 	m_Scene["floor"].GetTransform().Position.y = -1.0f;
 	m_Scene["floor"].GetTransform().Scale = glm::vec3(10.0f);
 	m_Scene["floor"].GetTransform().Rotation.x = -90.0f;
 
-	m_Scene.AddNode(Node("sun", DirectionalLight({ 1.0f, 1.0f, 1.0f }, 1.0f)));
+	Node* sun = new Node("sun", DirectionalLight({ 1.0f, 1.0f, 1.0f }, 1.0f));
+	m_Scene.AddNode(sun);
 	m_Scene["sun"].GetTransform().Rotation.x = 45.0f;
 	m_Scene["sun"].GetTransform().Rotation.y = 45.0f;
 

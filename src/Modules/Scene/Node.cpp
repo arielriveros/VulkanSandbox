@@ -30,20 +30,19 @@ void Node::Destroy()
     }
 
     for (auto& child : m_Children)
-        child.Destroy();
+        child->Destroy();
 
     m_Children.clear();
 }
 
-Node& Node::AddNode(Node& node)
+void Node::AddNode(Node* node)
 {
     // Check if node already exists
-    if (NodeExists(node.GetName()))
+    if (NodeExists(node->GetName()))
         throw std::runtime_error("Node already exists");
 
-    node.m_Parent = this;
+    node->m_Parent = this;
     m_Children.push_back(node);
-    return *this;
 }
 
 void Node::OnGUI()
@@ -232,18 +231,18 @@ void Node::OnGUI()
 
 bool Node::NodeExists(std::string name)
 {
-    for (auto& node : m_Children)
+    for (Node* node : m_Children)
     {
-        if (node.GetName() == name)
+        if (node->GetName() == name)
             return true;
     }
     return false;
 }
 
-Node &Node::FindNode(std::string name)
+Node* Node::FindNode(std::string name)
 {
     if (NodeExists(name))
-        for (auto& node : m_Children) if (node.GetName() == name) return node;
+        for (Node* node : m_Children) if (node->GetName() == name) return node;
 
     throw std::runtime_error("Node does not exist");
 }
