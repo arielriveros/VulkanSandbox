@@ -207,23 +207,7 @@ void Node::OnGUI()
 
     if (m_Type == NodeType::Light)
     {
-        ImGui::Text("Color");
-        ImGui::SameLine(0.0f, 0.0f);
-        ImGui::PushItemWidth(50);
-        ImGui::ColorEdit3(("##"+ m_Name +"Color").c_str(), &m_Light.Color.x, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
-        ImGui::PopItemWidth();
-
-        ImGui::Text("Intensity");
-        ImGui::SameLine(0.0f, 0.0f);
-        ImGui::PushItemWidth(50);
-        ImGui::DragFloat(("##"+ m_Name +"Intensity").c_str(), &m_Light.Intensity, 0.1f, 0.0f, 10.0f);
-        ImGui::PopItemWidth();
-
-        ImGui::Text("Ambient Intensity");
-        ImGui::SameLine(0.0f, 0.0f);
-        ImGui::PushItemWidth(50);
-        ImGui::DragFloat(("##"+ m_Name +"Ambient Intensity").c_str(), &m_Light.AmbientIntensity, 0.01f, 0.0f, 1.0f);
-        ImGui::PopItemWidth();
+        m_Light.OnGUI();
     }
 
     ImGui::PopID();

@@ -30,8 +30,11 @@ const int MAX_FRAMES_IN_FLIGHT = 2;
 struct SceneUBO {
 	glm::mat4 ViewProjection;	// Camera view and projection matrix
 	glm::vec4 CameraPosition;	// Camera position, w = 1.0
-	glm::vec4 DirectionalLightDirection; // Directional light direction, w = intensity
-	glm::vec4 DirectionalLightColor;	// Directional light color (rgb), w = ambient intensity
+
+	glm::vec4 LightDir; 		// Directional light direction, w = unused
+	glm::vec4 LightDiffuse;		// Directional light color (rgb), w = unused
+	glm::vec4 LightSpecular;	// Directional light color (rgb), w = unused
+	glm::vec4 LightAmbient;		// Directional light color (rgb), w = unused
 };
 
 struct PushConstantData {

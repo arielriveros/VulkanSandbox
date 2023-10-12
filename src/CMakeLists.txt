@@ -18,6 +18,7 @@ add_executable(${PROJECT_NAME}
 	"Modules/Scene/Node.cpp"
 	"Modules/Scene/Transform.h"
 	"Modules/Scene/Transform.cpp"
+	"Modules/Scene/Lighting/Light.h"
 	"Modules/Scene/Lighting/DirectionalLight.h"
 	"Modules/Scene/Lighting/DirectionalLight.cpp"
 	"Modules/Renderer/Vulkan/Buffer.h"

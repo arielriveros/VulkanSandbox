@@ -3,16 +3,15 @@
 
 DirectionalLight::DirectionalLight()
 {
-}
+    Diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+    Specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    Ambient = glm::vec3(0.1f, 0.1f, 0.1f);
 
-DirectionalLight::DirectionalLight(glm::vec3 color, float intensity)
-    : Color(color), Intensity(intensity)
-{
+    Type = LightType::Directional;
 }
 
 void DirectionalLight::OnGUI()
 {
     ImGui::Text("Directional Light");
-    ImGui::ColorEdit3("Light Color", (float*)&Color, ImGuiColorEditFlags_NoInputs);
-	ImGui::SliderFloat("Ambient Intensity", &AmbientIntensity, 0.f, 1.f);
+    Light::OnGUI();
 }

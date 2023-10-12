@@ -280,8 +280,11 @@ void Renderer::UpdateSceneUBO(uint32_t currentImage)
 	SceneUBO ubo{};
 	ubo.ViewProjection = m_Camera.GetProjectionMatrix() * m_Camera.GetViewMatrix();
 	ubo.CameraPosition = glm::vec4(m_Camera.Position, 1.0f);
-	ubo.DirectionalLightDirection = glm::vec4(m_SceneGraph["sun"].GetTransform().GetForward(), m_SceneGraph["sun"].GetLight().Intensity);
-	ubo.DirectionalLightColor = glm::vec4(m_SceneGraph["sun"].GetLight().Color, m_SceneGraph["sun"].GetLight().AmbientIntensity);
+	Node dirLight = m_SceneGraph["sun"];
+	ubo.LightDir = glm::vec4(dirLight.GetTransform().GetForward(), 0.0f);
+	ubo.LightDiffuse = glm::vec4(dirLight.GetLight().Diffuse, 0.0f);
+	ubo.LightSpecular = glm::vec4(dirLight.GetLight().Specular, 0.0f);
+	ubo.LightAmbient = glm::vec4(dirLight.GetLight().Ambient, 0.0f);
 
 	m_Frames[currentImage].SceneUniformBuffer->WriteToBuffer(&ubo);
 }

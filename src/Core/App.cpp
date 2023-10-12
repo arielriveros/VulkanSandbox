@@ -65,7 +65,7 @@ void App::Init()
 	m_Scene["floor"].GetTransform().Scale = glm::vec3(10.0f);
 	m_Scene["floor"].GetTransform().Rotation.x = -90.0f;
 
-	Node* sun = new Node("sun", DirectionalLight({ 1.0f, 1.0f, 1.0f }, 1.0f));
+	Node* sun = new Node("sun", DirectionalLight());
 	m_Scene.AddNode(sun);
 	m_Scene["sun"].GetTransform().Rotation.x = 45.0f;
 	m_Scene["sun"].GetTransform().Rotation.y = 45.0f;

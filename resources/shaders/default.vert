@@ -8,8 +8,13 @@ layout(push_constant) uniform PushConstant {
 layout(set = 0, binding = 0) uniform SceneUBO {
     mat4 viewProjection;
     vec4 cameraPos;
-    vec4 dirLightDir;   // xyz = direction, w = intensity
-    vec4 dirLightColor; // rgb = color, a = ambient intensity
+
+    // Directional light
+    vec4 lightDir;   // xyz = direction, w = unused
+    vec4 lightDiffuse; // rgb = color, a = unused
+    vec4 lightSpecular; // rgb = color, a = unused
+    vec4 lightAmbient; // rgb = color, a = unused
+
 } scene;
 
 layout(location = 0) in vec3 inPosition;
