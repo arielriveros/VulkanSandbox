@@ -1,22 +1,28 @@
 #version 450
 
+struct DirectionalLight {
+    vec4 direction;
+    vec4 diffuse;
+    vec4 specular;
+    vec4 ambient;
+};
+
 layout(set = 0, binding = 0) uniform SceneUBO {
     mat4 viewProjection;
     vec4 cameraPos;
 
-    // Directional light
-    vec4 lightDir;   // xyz = direction, w = unused
-    vec4 lightDiffuse; // rgb = color, a = unused
-    vec4 lightSpecular; // rgb = color, a = unused
-    vec4 lightAmbient; // rgb = color, a = unused
+    DirectionalLight dirLight;
+} u_scene;
 
-} scene;
-
-layout(set = 1, binding = 0) uniform MaterialUBO {
+struct Material {
     vec4 diffuse;
     vec4 specular; // rgb = color, a = shininess
     vec4 ambient;
-} material;
+};
+
+layout(set = 1, binding = 0) uniform MaterialUBO {
+    Material material;
+} u_material;
 
 layout(set = 1, binding = 1) uniform sampler2D baseTexture;
 
@@ -30,25 +36,19 @@ vec4 calcDirectionalLighting(
     vec3 normal, 
     vec3 viewDir, 
     vec3 lightDir, 
-    vec4 Ld, 
-    vec4 Ls, 
-    vec4 La,
-    vec4 Kd,
-    vec4 Ks,
-    vec4 Ka,
-    float shininess
-    ) {
+    DirectionalLight light,
+    Material material) {
     // Calculate the diffuse component
     float diffuseFactor = max(dot(normal, lightDir), 0.0f);
-    vec4 diffuseColor = Ld * diffuseFactor * Kd;
+    vec4 diffuseColor = diffuseFactor * light.diffuse * material.diffuse;
 
     // Calculate the specular component blinn-phong
     vec3 halfwayDir = normalize(lightDir + viewDir);
-    float specularFactor = pow(max(dot(normal, halfwayDir), 0.0f), shininess);
-    vec4 specularColor = Ls * specularFactor * Ks;
+    float specularFactor = pow(max(dot(normal, halfwayDir), 0.0f), material.specular.a);
+    vec4 specularColor = specularFactor * light.specular * material.specular;
 
     // Calculate the ambient component
-    vec4 ambientColor = La * Ka;
+    vec4 ambientColor = light.ambient * material.ambient;
 
     return (diffuseColor + specularColor + ambientColor);
 }
@@ -57,16 +57,13 @@ void main() {
     // Normalize the surface normal
     vec3 normal = normalize(fragNormal);
     // Calculate the direction to the light
-    vec3 lightDir = normalize(scene.lightDir.xyz);
+    vec3 lightDir = normalize(u_scene.dirLight.direction.xyz);
     // Calculate the direction to the camera
-    vec3 viewDir = normalize(scene.cameraPos.xyz - fragPos.xyz);
+    vec3 viewDir = normalize(u_scene.cameraPos.xyz - fragPos.xyz);
 
     vec4 color = vec4(0.0f);
     // Calculate the lighting
-    color += calcDirectionalLighting(
-        normal, viewDir, lightDir,
-        scene.lightDiffuse, scene.lightSpecular, scene.lightAmbient,
-        material.diffuse, material.specular, material.ambient, material.specular.a);
+    color += calcDirectionalLighting(normal, viewDir, lightDir, u_scene.dirLight, u_material.material);
 
     // Sample the texture
     vec4 texel = texture(baseTexture, fragUV);
