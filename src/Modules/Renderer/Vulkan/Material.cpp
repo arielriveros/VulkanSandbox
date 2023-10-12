@@ -1,3 +1,4 @@
+#include <imgui.h>
 #include "Material.h"
 
 Material::Material(Device &device)
@@ -46,4 +47,40 @@ void Material::UpdateMaterial(MaterialData& parameters)
     ubo.SpecularColor = parameters.Parameters.SpecularColor;
     ubo.AmbientColor = parameters.Parameters.AmbientColor;
 	MaterialUniformBuffer->WriteToBuffer(&ubo);
+}
+
+void MaterialData::OnGUI()
+{
+    ImGui::Text("Material");
+    if (ImGui::BeginCombo("Material Type", Type == MaterialType::Basic ? "Basic" : Type == MaterialType::Wireframe ? "Wireframe" : "Default"))
+    {
+        if (ImGui::Selectable("Basic", Type == MaterialType::Basic))
+            Type = MaterialType::Basic;
+        if (ImGui::Selectable("Wireframe", Type == MaterialType::Wireframe))
+            Type = MaterialType::Wireframe;
+        if (ImGui::Selectable("Default", Type == MaterialType::Default))
+            Type = MaterialType::Default;
+        ImGui::EndCombo();
+    }
+    switch(Type)
+    {
+        case MaterialType::Basic:
+            ImGui::Text("Type: Basic");
+            ImGui::ColorEdit3("Color", &Parameters.DiffuseColor.x);
+            ImGui::Text(TexturePath.c_str());
+            break;
+        case MaterialType::Wireframe:
+            ImGui::Text("Type: Wireframe");
+            ImGui::ColorEdit3("Color", &Parameters.DiffuseColor.x);
+            break;
+        case MaterialType::Default:
+            ImGui::Text("Type: Default");
+            ImGui::ColorEdit3("Diffuse Color", &Parameters.DiffuseColor.x);
+            ImGui::ColorEdit3("Specular Color", &Parameters.SpecularColor.x);
+            ImGui::ColorEdit3("Ambient Color", &Parameters.AmbientColor.x);
+            ImGui::DragFloat("Shininess", &Parameters.SpecularColor.w, 0.1f, 0.0f, 512.0f);
+            break;
+    }
+
+    
 }

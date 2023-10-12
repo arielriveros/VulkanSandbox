@@ -28,4 +28,6 @@ struct Transform
     glm::mat4 GetNormalMatrix() const;
 
     glm::vec3 GetForward() const;
+
+    void OnGUI();
 };

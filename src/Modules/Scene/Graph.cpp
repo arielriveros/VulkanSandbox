@@ -20,7 +20,6 @@ void SceneGraph::Terminate()
 
 void SceneGraph::OnGUI()
 {
-    m_Root.OnGUI();
 }
 
 void SceneGraph::AddNode(Node *node)

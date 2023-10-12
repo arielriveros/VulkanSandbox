@@ -481,7 +481,7 @@ void Renderer::DrawImGui()
 
     ImGui::Begin("Node Properties");
     if (m_SelectedNode != nullptr)
-		m_SelectedNode->OnGUI();
+		m_SelectedNode->OnPropertiesGUI();
     ImGui::End();
 
 	//ImGui::ShowDemoWindow();

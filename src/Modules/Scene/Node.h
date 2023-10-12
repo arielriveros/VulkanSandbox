@@ -37,7 +37,7 @@ public:
     Node* operator[](uint32_t index) { return m_Children[index]; }
     Node* operator[](std::string name) { return FindNode(name); }
 
-    void OnGUI();
+    void OnPropertiesGUI();
     
 private:
     bool NodeExists(std::string name);

@@ -38,6 +38,8 @@ struct MaterialData {
 	MaterialParameters Parameters;
 	std::string TexturePath = "";
 	MaterialType Type = MaterialType::Default;
+
+	void OnGUI();
 };
 
 class Material {
