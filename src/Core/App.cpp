@@ -70,6 +70,9 @@ void App::Init()
 	m_Scene["sun"].GetTransform().Rotation.x = 45.0f;
 	m_Scene["sun"].GetTransform().Rotation.y = 45.0f;
 
+	Node* pointLight = new Node("pointLight", PointLight());
+	m_Scene.AddNode(pointLight);
+
 	m_Renderer = std::make_unique<Renderer>(m_Window, m_Camera, m_Scene);
 	m_Renderer->Initialize();
 }

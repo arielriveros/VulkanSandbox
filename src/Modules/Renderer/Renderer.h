@@ -22,6 +22,7 @@
 #include "../Scene/Graph.h"
 #include "../Scene/Model.h"
 #include "../Scene/Lighting/DirectionalLight.h"
+#include "../Scene/Lighting/PointLight.h"
 #include "../ModuleInterface.h"
 #include "../../Core/Window.h"
 
@@ -35,11 +36,21 @@ struct GPUDirectionalLight
 	glm::vec4 LightAmbient;		// Directional light color (rgb), w = unused
 };
 
+struct GPUPointLight
+{
+	glm::vec4 LightPos; 		// Point light position, w = 1.0
+	glm::vec4 LightDiffuse;		// Point light color (rgb), w = unused
+	glm::vec4 LightSpecular;	// Point light color (rgb), w = unused
+	glm::vec4 LightAmbient;		// Point light color (rgb), w = unused
+	glm::vec4 Properties;		// x = constant, y = linear, z = quadratic, w = unused
+};
+
 struct SceneUBO
 {
 	glm::mat4 ViewProjection;	// Camera view and projection matrix
 	glm::vec4 CameraPosition;	// Camera position, w = 1.0
 	GPUDirectionalLight DirLight;		// Directional light
+	GPUPointLight PointLight;			// Point lights
 };
 
 struct PushConstantData {

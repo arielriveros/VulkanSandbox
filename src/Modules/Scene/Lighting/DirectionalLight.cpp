@@ -13,5 +13,7 @@ DirectionalLight::DirectionalLight()
 void DirectionalLight::OnGUI()
 {
     ImGui::Text("Directional Light");
-    Light::OnGUI();
+    ImGui::ColorEdit3("Diffuse", &Diffuse.x);
+    ImGui::ColorEdit3("Specular", &Specular.x);
+    ImGui::ColorEdit3("Ambient", &Ambient.x);
 }

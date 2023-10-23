@@ -283,9 +283,20 @@ void Renderer::UpdateSceneUBO(uint32_t currentImage)
 	Node dirLight = m_SceneGraph["sun"];
 	ubo.DirLight = {
 		glm::vec4(dirLight.GetTransform().GetForward(), 0.0f),
-		glm::vec4(dirLight.GetLight().Diffuse, 0.0f),
-		glm::vec4(dirLight.GetLight().Specular, 0.0f),
-		glm::vec4(dirLight.GetLight().Ambient, 0.0f)
+		glm::vec4(dirLight.GetDirLight().Diffuse, 0.0f),
+		glm::vec4(dirLight.GetDirLight().Specular, 0.0f),
+		glm::vec4(dirLight.GetDirLight().Ambient, 0.0f)
+	};
+	Node pointLight = m_SceneGraph["pointLight"];
+
+	ubo.PointLight = {
+		glm::vec4(pointLight.GetTransform().Position, 1.0f),
+		glm::vec4(pointLight.GetPointLight().Diffuse, 0.0f),
+		glm::vec4(pointLight.GetPointLight().Specular, 0.0f),
+		glm::vec4(pointLight.GetPointLight().Ambient, 0.0f),
+		{pointLight.GetPointLight().Constant,
+		pointLight.GetPointLight().Linear,
+		pointLight.GetPointLight().Quadratic, 0.0f}
 	};
 
 	m_Frames[currentImage].SceneUniformBuffer->WriteToBuffer(&ubo);
@@ -363,16 +374,21 @@ void Renderer::DrawFrame()
 		
 		PushConstantData pushConstantData{};
 
+		// TODO: Implement world and local transforms and update them outside of the draw loop
+		// This implementation only updates 1 layer above the current node
 		if (node.m_Parent != nullptr)
 		{
 			glm::mat4 parent = node.m_Parent->GetTransform().GetCompositeMatrix();
 			glm::mat4 model = node.GetTransform().GetCompositeMatrix();
 			pushConstantData.Model = parent * model;
+			pushConstantData.Normal = glm::transpose(glm::inverse(parent * model));
 		}
 		else
+		{
 			pushConstantData.Model = node.GetTransform().GetCompositeMatrix();
+			pushConstantData.Normal = node.GetTransform().GetNormalMatrix();
+		}
 		
-		pushConstantData.Normal = node.GetTransform().GetNormalMatrix();
 		commandBuffer.pushConstants(m_Pipelines[node.m_Material->GetType()].Pipeline->GetLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstantData), &pushConstantData);
 
 		node.m_Material->UpdateMaterial(node.GetModel().GetMaterialParameters());

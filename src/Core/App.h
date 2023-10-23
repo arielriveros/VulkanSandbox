@@ -8,6 +8,7 @@
 #include "../Modules/Scene/Model.h"
 #include "../Modules/Renderer/Renderer.h"
 #include "../Modules/Scene/Lighting/DirectionalLight.h"
+#include "../Modules/Scene/Lighting/PointLight.h"
 
 class App
 {

@@ -12,11 +12,23 @@ struct DirectionalLight {
     vec4 ambient;
 };
 
+struct PointLight {
+    vec4 position;
+    vec4 diffuse;
+    vec4 specular;
+    vec4 ambient;
+    float constant;
+    float linear;
+    float quadratic;
+    float padding;
+};
+
 layout(set = 0, binding = 0) uniform SceneUBO {
     mat4 viewProjection;
     vec4 cameraPos;
 
     DirectionalLight dirLight;
+    PointLight pointLight;
 } u_scene;
 
 layout(location = 0) in vec3 inPosition;

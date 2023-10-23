@@ -12,7 +12,12 @@ Node::Node(std::string name, Model model)
 }
 
 Node::Node(std::string name, DirectionalLight light)
-    : m_Name(name), m_Light(light), m_Type(NodeType::Light)
+    : m_Name(name), m_DirLight(light), m_Type(NodeType::DirLight)
+{
+}
+
+Node::Node(std::string name, PointLight light)
+    : m_Name(name), m_PointLight(light), m_Type(NodeType::PointLight)
 {
 }
 
@@ -57,8 +62,11 @@ void Node::OnPropertiesGUI()
     if (m_Type == NodeType::Model)
         m_Model.m_Material.OnGUI();
 
-    if (m_Type == NodeType::Light)
-        m_Light.OnGUI();
+    if (m_Type == NodeType::DirLight)
+        m_DirLight.OnGUI();
+
+    if (m_Type == NodeType::PointLight)
+        m_PointLight.OnGUI();
 
     ImGui::PopID();
 }

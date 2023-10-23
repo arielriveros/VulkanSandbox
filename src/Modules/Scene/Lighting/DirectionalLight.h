@@ -6,5 +6,5 @@ class DirectionalLight: public Light
 {
 public:
     DirectionalLight();
-    void OnGUI();
+    void OnGUI() override;
 };

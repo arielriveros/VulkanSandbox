@@ -20,10 +20,5 @@ public:
 
     LightType Type = LightType::Directional;
 
-    void OnGUI()
-    {
-        ImGui::ColorEdit3("Diffuse", &Diffuse.x);
-        ImGui::ColorEdit3("Specular", &Specular.x);
-        ImGui::ColorEdit3("Ambient", &Ambient.x);
-    }
+    virtual void OnGUI(){};
 };
